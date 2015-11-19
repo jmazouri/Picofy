@@ -229,3 +229,5 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+Picofy/App.config
+.vs/config/applicationhost.config

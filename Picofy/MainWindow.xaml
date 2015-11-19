@@ -1,0 +1,69 @@
+﻿<Window x:Class="Picofy.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Picofy"
+        mc:Ignorable="d"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
+        MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
+        Title="Picofy" Height="429.5" Width="849">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32"></RowDefinition>
+            <RowDefinition Height="1*"></RowDefinition>
+            <RowDefinition Height="32"></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <TextBox Grid.Row="0" HorizontalAlignment="Stretch" Name="Query" Margin="5,5,80,5"></TextBox>
+        <Button Grid.Row="0" HorizontalAlignment="Right" Name="PlayButton" Width="75" Click="PlayButton_Click">Load</Button>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"></ColumnDefinition>
+                <ColumnDefinition Width="3"></ColumnDefinition>
+                <ColumnDefinition Width="5*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <DockPanel Grid.Column="0" DataContext="{Binding Player}">
+                <Grid DockPanel.Dock="Bottom">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Button Name="PrevButton" Grid.Column="0" Click="PrevButton_Click">
+                        <Image Source="/Icons/skip-previous.png"></Image>
+                    </Button>
+                    <Button Name="PauseButton" Grid.Column="1" Click="PauseButton_Click">
+                        <Image Source="/Icons/play.png"></Image>
+                    </Button>
+                    <Button Name="NextButton" Grid.Column="2" Click="NextButton_Click">
+                        <Image Source="/Icons/skip-next.png"></Image>
+                    </Button>
+                </Grid>
+                <DockPanel Dock="Bottom" LastChildFill="False">
+                    <TextBlock TextWrapping="WrapWithOverflow" Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artist.Name}"/>
+                    <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
+                </DockPanel>
+                
+                <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/> 
+            </DockPanel>
+            <GridSplitter Background="Transparent" ResizeDirection="Columns" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+            <ListView Grid.Column="2" Name="Songlist"  MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <ProgressBar Name="ProgressB" Value="{Binding Player.SongProgress}" Maximum="{Binding Player.SongLength}" Grid.Column="1"/>
+        </Grid>
+        
+    </Grid>
+</Window>
