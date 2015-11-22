@@ -1,21 +1,35 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Controls;
+using System.Timers;
 using Picofy.Annotations;
-using TRock.Music;
-using TRock.Music.Torshify;
+using Picofy.TorshifyHelper;
+using Torshify;
 
 namespace Picofy.Models
 {
-    public class MusicPlayer : INotifyPropertyChanged
+    public class MusicPlayer : INotifyPropertyChanged, IDisposable
     {
+        public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
+
+        private float _volume;
+
+        public float Volume
+        {
+            get { return _volume; }
+            set
+            {
+                if (value.Equals(_volume))
+                {
+                    return;
+                }
+                _volume = value;
+                SongPlayer.Volume = value;
+                OnPropertyChanged();
+            }
+        }
+
         private Song _currentSong;
 
         public Song CurrentSong
@@ -29,74 +43,74 @@ namespace Picofy.Models
                 }
                 _currentSong = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SongDuration));
             }
         }
 
-        private int _songProgress;
+        private readonly Timer _songTimer;
 
+        private int _songProgress;
         public int SongProgress
         {
             get { return _songProgress; }
             set
             {
-                if (value == _songProgress)
-                {
-                    return;
-                }
+                _songTimer.Stop();
+
                 _songProgress = value;
-                OnPropertyChanged();
+                SongPlayer.Session.PlayerSeek(new TimeSpan(0, 0, value));
+                OnPropertyChanged(nameof(SongProgress));
+
+                _songTimer.Start();
             }
         }
+        public int SongDuration => CurrentSong?.TotalSeconds ?? 0;
 
-        private int _songLength;
+        public TorshifySongPlayer SongPlayer;
+        //public SpotifySongProvider SpotifySongProvider { get; private set; }
 
-        public int SongLength
+        public void Connect(string username, string password, bool rememberme)
         {
-            get { return _songLength; }
-            set
+            if (SongPlayer == null)
             {
-                if (value == _songLength)
-                {
-                    return;
-                }
-                _songLength = value;
-                OnPropertyChanged();
+                SongPlayer = new TorshifySongPlayer(username, password, rememberme);
+            }
+            else
+            {
+                SongPlayer.Session.Login(username, password, rememberme);
+                while (SongPlayer.Session.ConnectionState != ConnectionState.LoggedIn) { }
+                while (SongPlayer.Session.PlaylistContainer == null) { }
             }
         }
-
-        public TorshifySongPlayerClient SongPlayer;
-        public SpotifySongProvider SpotifySongProvider;
 
         public MusicPlayer()
         {
-            var spotifyPlayerHost = new TorshifyServerProcessHandler();
-            spotifyPlayerHost.CloseServerTogetherWithClient = true;
-            spotifyPlayerHost.TorshifyServerLocation = "TRock.Music.Torshify.Server.exe";
-            spotifyPlayerHost.UserName = ConfigurationManager.AppSettings["spotifyUsername"];
-            spotifyPlayerHost.Password = ConfigurationManager.AppSettings["spotifyPassword"];
-            spotifyPlayerHost.Hidden = true;
-            spotifyPlayerHost.Start();
-
-            SpotifySongProvider = new SpotifySongProvider();
-
-            SongPlayer = new TorshifySongPlayerClient(new Uri("http://localhost:8081"));
-            SongPlayer.Connect().ContinueWith(queryTask =>
+            //SpotifySongProvider = new SpotifySongProvider(ConfigurationManager.AppSettings["spotifyClientId"]);
+            _songTimer = new Timer(1000);
+            _songTimer.Elapsed += delegate
             {
-                SongPlayer.Volume = 0.25f;
-                SongPlayer.Progress += SongPlayer_Progress;
-            });
-        }
+                OnPropertyChanged(nameof(RequiresLogin));
 
-        private void SongPlayer_Progress(object sender, ValueProgressEventArgs<int> e)
-        {
-            SongProgress = e.Current;
-            SongLength = e.Total;
+                if (SongProgress >= SongDuration)
+                {
+                    return;
+                }
+
+                _songProgress++;
+                OnPropertyChanged(nameof(SongProgress));
+            };
+            _songTimer.Start();
         }
 
         public void PlaySong(Song song)
         {
+            _songTimer.Stop();
+
             CurrentSong = song;
-            SongPlayer.Start(song);
+            _songProgress = 0;
+            SongPlayer.PlaySong(CurrentSong);
+
+            _songTimer.Start();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -105,6 +119,11 @@ namespace Picofy.Models
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Dispose()
+        {
+            SongPlayer.Dispose();
         }
     }
 }

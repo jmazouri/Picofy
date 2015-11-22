@@ -4,7 +4,5 @@
         <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5.2" />
     </startup>
   <appSettings>
-    <add key="spotifyUsername" value="username"/>
-    <add key="spotifyPassword" value="password"/>
   </appSettings>
 </configuration>

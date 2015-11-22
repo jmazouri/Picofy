@@ -4,66 +4,96 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Picofy"
-        mc:Ignorable="d"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        mc:Ignorable="d" Name="TheWindow"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Picofy" Height="429.5" Width="849">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"></ColumnDefinition>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="32"></RowDefinition>
-            <RowDefinition Height="1*"></RowDefinition>
-            <RowDefinition Height="32"></RowDefinition>
-        </Grid.RowDefinitions>
+        Title="Picofy" Height="429.5" Width="849" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
+    <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
-        <TextBox Grid.Row="0" HorizontalAlignment="Stretch" Name="Query" Margin="5,5,80,5"></TextBox>
-        <Button Grid.Row="0" HorizontalAlignment="Right" Name="PlayButton" Width="75" Click="PlayButton_Click">Load</Button>
-
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"></ColumnDefinition>
-                <ColumnDefinition Width="3"></ColumnDefinition>
-                <ColumnDefinition Width="5*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-
-            <DockPanel Grid.Column="0" DataContext="{Binding Player}">
-                <Grid DockPanel.Dock="Bottom">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"></ColumnDefinition>
-                        <ColumnDefinition Width="1*"></ColumnDefinition>
-                        <ColumnDefinition Width="1*"></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
-                    <Button Name="PrevButton" Grid.Column="0" Click="PrevButton_Click">
-                        <Image Source="/Icons/skip-previous.png"></Image>
-                    </Button>
-                    <Button Name="PauseButton" Grid.Column="1" Click="PauseButton_Click">
-                        <Image Source="/Icons/play.png"></Image>
-                    </Button>
-                    <Button Name="NextButton" Grid.Column="2" Click="NextButton_Click">
-                        <Image Source="/Icons/skip-next.png"></Image>
-                    </Button>
-                </Grid>
-                <DockPanel Dock="Bottom" LastChildFill="False">
-                    <TextBlock TextWrapping="WrapWithOverflow" Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artist.Name}"/>
-                    <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
-                </DockPanel>
+        <materialDesign:DialogHost.DialogContent>
+            <StackPanel Margin="16">
+                <TextBlock Margin="0,0,0,10">Enter your Spotify credentials</TextBlock>
                 
-                <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/> 
-            </DockPanel>
-            <GridSplitter Background="Transparent" ResizeDirection="Columns" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
-            <ListView Grid.Column="2" Name="Songlist"  MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
-        </Grid>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Margin="0,8,10,0">Username</TextBlock>
+                    <TextBox Name="UsernameBox" Width="100" />
+                </StackPanel>
 
-        <Grid Grid.Row="2">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Margin="0,8,10,0">Password</TextBlock>
+                    <PasswordBox Name="PasswordBox" Width="100" />
+                </StackPanel>
+                
+                <CheckBox Name="Remember" Content="Remember" Margin="0,5,0,0" HorizontalAlignment="Center"></CheckBox>
+
+                <!--<TextBlock Name="ErrorText" Foreground="#DDFF0000" ></TextBlock>-->
+
+                <Button Name="LoginButton" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Stretch" IsDefault="True" Margin="0 8 8 0" Click="LoginButton_Click_1">
+                    Log In
+                </Button>
+
+            </StackPanel>
+        </materialDesign:DialogHost.DialogContent>
+        
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <ProgressBar Name="ProgressB" Value="{Binding Player.SongProgress}" Maximum="{Binding Player.SongLength}" Grid.Column="1"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"></RowDefinition>
+                <RowDefinition Height="32"></RowDefinition>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="70*"></ColumnDefinition>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="130*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <DockPanel Grid.Column="0" DataContext="{Binding Player}">
+                    <Grid DockPanel.Dock="Bottom">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <Button Name="PrevButton" Grid.Column="0" Click="PrevButton_Click">
+                            <Image Source="/Icons/skip-previous.png"></Image>
+                        </Button>
+                        <Button Name="PauseButton" Grid.Column="1" Click="PauseButton_Click">
+                            <Image Source="/Icons/play.png"></Image>
+                        </Button>
+                        <Button Name="NextButton" Grid.Column="2" Click="NextButton_Click">
+                            <Image Source="/Icons/skip-next.png"></Image>
+                        </Button>
+                    </Grid>
+                
+                    <DockPanel Dock="Bottom" LastChildFill="False">
+                        <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
+                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artist.Name}"/>
+                        <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
+                    </DockPanel>
+                
+                    <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/> 
+                </DockPanel>
+                <GridSplitter Background="Transparent" ResizeDirection="Columns" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <ListView Grid.Column="2" Name="Songlist"  MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="8*"></ColumnDefinition>
+                    <ColumnDefinition Width="2*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+
+                <ProgressBar Name="ProgressB" Value="{Binding Path=Player.SongProgress, Mode=OneWay}" Maximum="{Binding Player.SongDuration, Mode=OneWay}" Margin="5,0,5,0" Grid.Column="0" MouseUp="ProgressB_MouseUp"/>
+                <Slider Name="VolumeSlider" Maximum="1" Value="{Binding Player.Volume}" Grid.Column="1" Margin="5,7,6,5"></Slider>
+            </Grid>
         </Grid>
-        
-    </Grid>
+    </materialDesign:DialogHost>
 </Window>

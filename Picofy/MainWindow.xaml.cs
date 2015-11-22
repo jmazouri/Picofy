@@ -1,13 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using CsQuery;
+using System.Windows.Input;
 using Picofy.Models;
-using TRock.Music;
+using Torshify;
 
 namespace Picofy
 {
@@ -21,58 +20,17 @@ namespace Picofy
         public MainWindow()
         {
             Player = new MusicPlayer();
-
             InitializeComponent();
         }
 
-        private void PlayButton_Click(object sender, RoutedEventArgs e)
+
+
+        private void Songlist_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            CQ.CreateFromUrlAsync(Query.Text).Then(
-            responseSuccess =>
+            if (Songlist.SelectedItem != null)
             {
-                var result = responseSuccess.Dom["meta"]
-                    .Where(d=>d.GetAttribute("property") == "music:song")
-                    .Select(d=>Player.SpotifySongProvider.GetSongFromId(d.GetAttribute("content").Split('/').Last()));
-
-                Dispatcher.Invoke(delegate
-                {
-                    Songlist.Items.Clear();
-
-                    foreach (Song s in result)
-                    {
-                        Songlist.Items.Add(s);
-                    }
-
-                    Songlist.SelectedIndex = 0;
-                    PlaySong((Song)Songlist.SelectedItem);
-                });
-            }, 
-            responseFail =>
-            {
-                MessageBox.Show("Couldn't load playlist. Error: " + responseFail.Error);
-            });
-        }
-
-        private void PlaySong(Song sng)
-        {
-            Player.PlaySong(sng);
-
-            /*
-            BitmapImage bmp = new BitmapImage();
-            bmp.BeginInit();
-            bmp.UriSource = new Uri(sng.Album.CoverArt);
-            bmp.EndInit();
-
-            bmp.DownloadCompleted += delegate
-            {
-                Background = new SolidColorBrush(Util.AverageColorOfImage(bmp));
-            };
-            */
-        }
-
-        private void Songlist_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            PlaySong((Song)Songlist.SelectedItem);
+                Player.PlaySong((Song)Songlist.SelectedItem);
+            }
         }
 
         private void PrevButton_Click(object sender, RoutedEventArgs e)
@@ -87,7 +45,7 @@ namespace Picofy
                 Songlist.SelectedIndex--;
             }
 
-            PlaySong((Song)Songlist.SelectedItem);
+            Player.PlaySong((Song)Songlist.SelectedItem);
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
@@ -102,7 +60,7 @@ namespace Picofy
                 Songlist.SelectedIndex++;
             }
 
-            PlaySong((Song)Songlist.SelectedItem);
+            Player.PlaySong((Song)Songlist.SelectedItem);
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
@@ -115,6 +73,81 @@ namespace Picofy
             {
                 Player.SongPlayer.Play();
             }
+        }
+
+        private void LoginButton_Click_1(object sender, RoutedEventArgs e)
+        {
+            if (String.IsNullOrWhiteSpace(UsernameBox.Text) || String.IsNullOrWhiteSpace(PasswordBox.Password))
+            {
+                return;
+            }
+
+            DoTempLogon(UsernameBox.Text, PasswordBox.Password, Remember.IsChecked == true);
+        }
+
+        private void DoTempLogon(string username, string password, bool rememberme)
+        {
+            Player.Connect(username, password, rememberme);
+
+            try
+            {
+                Player.Volume = 0.25f;
+                Dispatcher.Invoke(LoadFirstPlaylistSongs);
+            }
+            catch
+            {
+                
+            }
+        }
+
+        void LoadFirstPlaylistSongs()
+        {
+            Songlist.Items.Clear();
+
+            /*
+            foreach (Song s in Player.SpotifySongProvider.GetFirstPlaylistSongs())
+            {
+                Songlist.Items.Add(s);
+            }
+            */
+
+            var playlistTracks = Player.SongPlayer.Session.PlaylistContainer.Playlists[0].Tracks;
+
+            foreach (ITrack trk in playlistTracks)
+            {
+                if (trk.IsLocal) { continue; }
+
+                Songlist.Items.Add(new Song
+                {
+                    Id = trk.ToLink().AsUri(),
+                    Name = trk.Name,
+                    Artist = new Artist
+                    {
+                        Name = trk.Artists.First().Name
+                    },
+                    Album = new Album
+                    {
+                        CoverArt = "https://i.scdn.co/image/" + trk.Album?.CoverId
+                    },
+                    TotalSeconds = (int)trk.Duration.TotalSeconds
+                });
+            }
+        }
+
+        private void TheWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            DoTempLogon(null, null, true);
+        }
+
+        private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Player.Dispose();
+        }
+
+        private void ProgressB_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            int newPos = (int) ((e.GetPosition(ProgressB).X/ProgressB.ActualWidth)*Player.SongDuration);
+            Player.SongProgress = newPos;
         }
     }
 }
