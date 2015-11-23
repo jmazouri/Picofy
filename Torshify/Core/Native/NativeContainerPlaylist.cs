@@ -186,6 +186,11 @@ namespace Torshify.Core.Native
             }
         }
 
+        public override string ToString()
+        {
+            return Name;
+        }
+
         #endregion Private Methods
     }
 }

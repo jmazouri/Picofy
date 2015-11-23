@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Security.Authentication;
 using System.Text;
@@ -8,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using NAudio.Utils;
 using NAudio.Wave;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Picofy.Models;
 using Torshify;
 
@@ -18,6 +21,8 @@ namespace Picofy.TorshifyHelper
         public readonly ISession Session;
         private BufferedWaveProvider _provider;
         private WaveOut _waveOut;
+
+        private readonly object _lockObject = new object();
 
         private ManualResetEvent wait = new ManualResetEvent(false);
 
@@ -32,6 +37,25 @@ namespace Picofy.TorshifyHelper
                 }
             }
         }
+
+        public static bool HasSavedCredentials()
+        {
+            string dataPath = Path.Combine(Directory.GetCurrentDirectory(), "PicofyData", "Settings", "settings");
+
+            if (!File.Exists(dataPath))
+            {
+                return false;
+            }
+
+            JToken nameToken;
+
+            if (JObject.Parse(File.ReadAllText(dataPath)).TryGetValue("autologin_canonical_username", out nameToken))
+            {
+                return true;
+            }
+
+            return false;
+        }
         
         public TorshifySongPlayer(string username = null, string password = null, bool rememberme = false)
         {
@@ -41,13 +65,8 @@ namespace Picofy.TorshifyHelper
                    .SetPreferredBitrate(Bitrate.Bitrate320k);
             }
 
-            Session.ConnectionStateUpdated += (sender, eventArgs) =>
+            Session.LoginComplete += (sender, eventArgs) =>
             {
-                if (eventArgs.Status != Error.OK || Session.ConnectionState != ConnectionState.LoggedIn)
-                {
-                    return;
-                }
-
                 wait.Set();
 
                 _waveOut = new WaveOut();
@@ -62,14 +81,7 @@ namespace Picofy.TorshifyHelper
             }
             else
             {
-                if (Session.GetRememberedUser() != String.Empty)
-                {
-                    Session.Relogin();
-                }
-                else
-                {
-                    return;
-                }
+                Session.Relogin();
             }
 
             wait.WaitOne(10000);
@@ -79,22 +91,25 @@ namespace Picofy.TorshifyHelper
         {
             int consumed = 0;
 
-            if ((_provider == null || e.Frames == 0))
+            lock (_lockObject)
             {
-                _provider = new BufferedWaveProvider(new WaveFormat(e.Rate, e.Channels))
+                if ((_provider == null || e.Frames == 0))
                 {
-                    BufferDuration = TimeSpan.FromSeconds(0.35)
-                };
+                    _provider = new BufferedWaveProvider(new WaveFormat(e.Rate, e.Channels))
+                    {
+                        BufferDuration = TimeSpan.FromSeconds(0.5)
+                    };
 
-                _waveOut.Init(_provider);
+                    _waveOut.Init(_provider);
 
-                _waveOut.Play();
-            }
+                    _waveOut.Play();
+                }
 
-            if ((_provider.BufferLength - _provider.BufferedBytes) > e.Samples.Length)
-            {
-                _provider.AddSamples(e.Samples, 0, e.Samples.Length);
-                consumed = e.Frames;
+                if ((_provider.BufferLength - _provider.BufferedBytes) > e.Samples.Length)
+                {
+                    _provider.AddSamples(e.Samples, 0, e.Samples.Length);
+                    consumed = e.Frames;
+                }
             }
 
             e.ConsumedFrames = consumed;
@@ -128,6 +143,11 @@ namespace Picofy.TorshifyHelper
         {
             var track = new SessionLinkFactory(Session).GetLink(song.Id).Object.Track;
 
+            lock (_lockObject)
+            {
+                _provider = null;
+            }
+
             if (!track.WaitUntilLoaded(500) || Session.PlayerLoad(track) != Error.OK)
             {
                 return;
@@ -138,13 +158,36 @@ namespace Picofy.TorshifyHelper
 
         public void Dispose()
         {
-            Session?.PlayerUnload();
-            Session?.Logout();
+            //Session?.PlayerPause();
+            //Session?.PlayerUnload();
+            //Session?.Logout();
+            //Session.LogoutComplete += delegate
+            //{
+            //    Session?.Dispose();
+            //    _waveOut?.Dispose();
+            //};
+
+            //Session?.PlayerUnload();
+
             Session.LogoutComplete += delegate
             {
-                Session?.Dispose();
+                Session.Dispose();
                 _waveOut?.Dispose();
             };
+
+            Session.PlayerUnload();
+
+            if (IsPlaying)
+            {
+                Session.StopPlayback += delegate
+                {
+                    Session.Logout();
+                };
+            }
+            else
+            {
+                Session.Logout();
+            }
         }
     }
 }

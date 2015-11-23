@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Picofy.Models;
+using Picofy.TorshifyHelper;
 using Torshify;
 
 namespace Picofy
@@ -88,33 +89,30 @@ namespace Picofy
         private void DoTempLogon(string username, string password, bool rememberme)
         {
             Player.Connect(username, password, rememberme);
+            Player.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
 
-            try
+            foreach (var lst in Player.SongPlayer.Session.PlaylistContainer.Playlists)
             {
-                Player.Volume = 0.25f;
-                Dispatcher.Invoke(LoadFirstPlaylistSongs);
+                if (lst.Type != PlaylistType.Playlist)
+                {
+                    continue;
+                }
+                PlaylistList.Items.Add(lst);
             }
-            catch
-            {
-                
-            }
+
+            LoadPlaylistSongs(Player.SongPlayer.Session.PlaylistContainer.Playlists[0]);
         }
 
-        void LoadFirstPlaylistSongs()
+        void LoadPlaylistSongs(IContainerPlaylist playlist)
         {
+            playlist.WaitUntilLoaded();
+
             Songlist.Items.Clear();
 
-            /*
-            foreach (Song s in Player.SpotifySongProvider.GetFirstPlaylistSongs())
+            foreach (var trk in playlist.Tracks)
             {
-                Songlist.Items.Add(s);
-            }
-            */
+                trk.WaitUntilLoaded();
 
-            var playlistTracks = Player.SongPlayer.Session.PlaylistContainer.Playlists[0].Tracks;
-
-            foreach (ITrack trk in playlistTracks)
-            {
                 if (trk.IsLocal) { continue; }
 
                 Songlist.Items.Add(new Song
@@ -132,22 +130,36 @@ namespace Picofy
                     TotalSeconds = (int)trk.Duration.TotalSeconds
                 });
             }
+
+
         }
+
 
         private void TheWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            DoTempLogon(null, null, true);
-        }
-
-        private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            Player.Dispose();
+            if (TorshifySongPlayer.HasSavedCredentials())
+            {
+                DoTempLogon(null, null, true);
+            }
         }
 
         private void ProgressB_MouseUp(object sender, MouseButtonEventArgs e)
         {
             int newPos = (int) ((e.GetPosition(ProgressB).X/ProgressB.ActualWidth)*Player.SongDuration);
             Player.SongProgress = newPos;
+        }
+
+        private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Player?.SongPlayer?.Dispose();
+        }
+
+        private void PlaylistList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (PlaylistList.SelectedItem != null)
+            {
+                LoadPlaylistSongs((IContainerPlaylist)PlaylistList.SelectedItem);
+            }
         }
     }
 }

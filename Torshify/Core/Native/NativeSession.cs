@@ -772,7 +772,7 @@ namespace Torshify.Core.Native
             _eventThread.IsBackground = true;
             _eventThread.Start();
 
-            AppDomain.CurrentDomain.ProcessExit += OnHostProcessExit;
+            //AppDomain.CurrentDomain.ProcessExit += OnHostProcessExit;
         }
 
         #endregion Public Methods
@@ -972,11 +972,12 @@ namespace Torshify.Core.Native
 
         #region Private Methods
 
+        /*
         private void OnHostProcessExit(object sender, EventArgs e)
         {
             Dispose();
         }
-
+        */
         private void MainThreadLoop()
         {
             int waitTime = 0;

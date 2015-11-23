@@ -11,7 +11,7 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Picofy" Height="429.5" Width="849" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
+        Title="Picofy" Height="493.5" Width="842" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
     <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
         <materialDesign:DialogHost.DialogContent>
@@ -49,13 +49,21 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*"></RowDefinition>
+                    <RowDefinition Height="3"></RowDefinition>
+                    <RowDefinition Height="1*"></RowDefinition>
+                </Grid.RowDefinitions>
+                
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70*"></ColumnDefinition>
                     <ColumnDefinition Width="1*"></ColumnDefinition>
                     <ColumnDefinition Width="130*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <DockPanel Grid.Column="0" DataContext="{Binding Player}">
+                <GridSplitter Grid.Row="1" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+
+                <DockPanel Grid.Column="0" Grid.Row="2" DataContext="{Binding Player}">
                     <Grid DockPanel.Dock="Bottom">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"></ColumnDefinition>
@@ -72,17 +80,21 @@
                             <Image Source="/Icons/skip-next.png"></Image>
                         </Button>
                     </Grid>
-                
+
                     <DockPanel Dock="Bottom" LastChildFill="False">
                         <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
                                    Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artist.Name}"/>
                         <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
                     </DockPanel>
-                
-                    <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/> 
+
+                    <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </DockPanel>
-                <GridSplitter Background="Transparent" ResizeDirection="Columns" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
-                <ListView Grid.Column="2" Name="Songlist"  MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
+
+                <ListView Grid.Row="0" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
+                              Foreground="White" MouseDoubleClick="PlaylistList_MouseDoubleClick"/>
+
+                <GridSplitter Grid.Row="0" Grid.Column="1" Background="Transparent" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <ListView Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Name="Songlist" MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
             </Grid>
 
             <Grid Grid.Row="1">

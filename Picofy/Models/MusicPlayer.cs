@@ -9,7 +9,7 @@ using Torshify;
 
 namespace Picofy.Models
 {
-    public class MusicPlayer : INotifyPropertyChanged, IDisposable
+    public class MusicPlayer : INotifyPropertyChanged
     {
         public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
 
@@ -75,12 +75,6 @@ namespace Picofy.Models
             {
                 SongPlayer = new TorshifySongPlayer(username, password, rememberme);
             }
-            else
-            {
-                SongPlayer.Session.Login(username, password, rememberme);
-                while (SongPlayer.Session.ConnectionState != ConnectionState.LoggedIn) { }
-                while (SongPlayer.Session.PlaylistContainer == null) { }
-            }
         }
 
         public MusicPlayer()
@@ -119,11 +113,6 @@ namespace Picofy.Models
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void Dispose()
-        {
-            SongPlayer.Dispose();
         }
     }
 }
