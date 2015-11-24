@@ -11,6 +11,13 @@ namespace Picofy.Models
 {
     public class MusicPlayer : INotifyPropertyChanged
     {
+        public delegate void SongFinishedHandler();
+        public event SongFinishedHandler SongFinished;
+        protected virtual void OnSongFinished()
+        {
+            SongFinished?.Invoke();
+        }
+
         public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
 
         private float _volume;
@@ -30,9 +37,9 @@ namespace Picofy.Models
             }
         }
 
-        private Song _currentSong;
+        private ITrack _currentSong;
 
-        public Song CurrentSong
+        public ITrack CurrentSong
         {
             get { return _currentSong; }
             set
@@ -64,22 +71,22 @@ namespace Picofy.Models
                 _songTimer.Start();
             }
         }
-        public int SongDuration => CurrentSong?.TotalSeconds ?? 0;
+        public int SongDuration => (CurrentSong == null ? 0 : (int)CurrentSong.Duration.TotalSeconds);
 
         public TorshifySongPlayer SongPlayer;
-        //public SpotifySongProvider SpotifySongProvider { get; private set; }
 
         public void Connect(string username, string password, bool rememberme)
         {
             if (SongPlayer == null)
             {
                 SongPlayer = new TorshifySongPlayer(username, password, rememberme);
+                _volume = 0.25f;
+                OnPropertyChanged(nameof(Volume));
             }
         }
 
         public MusicPlayer()
         {
-            //SpotifySongProvider = new SpotifySongProvider(ConfigurationManager.AppSettings["spotifyClientId"]);
             _songTimer = new Timer(1000);
             _songTimer.Elapsed += delegate
             {
@@ -87,6 +94,10 @@ namespace Picofy.Models
 
                 if (SongProgress >= SongDuration)
                 {
+                    if (SongDuration > 0)
+                    {
+                        OnSongFinished();
+                    }
                     return;
                 }
 
@@ -96,7 +107,7 @@ namespace Picofy.Models
             _songTimer.Start();
         }
 
-        public void PlaySong(Song song)
+        public void PlaySong(ITrack song)
         {
             _songTimer.Stop();
 
@@ -105,6 +116,20 @@ namespace Picofy.Models
             SongPlayer.PlaySong(CurrentSong);
 
             _songTimer.Start();
+        }
+
+        public void PauseToggle()
+        {
+            if (SongPlayer.IsPlaying)
+            {
+                _songTimer.Stop();
+                SongPlayer.Pause();
+            }
+            else
+            {
+                _songTimer.Start();
+                SongPlayer.Play();
+            }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

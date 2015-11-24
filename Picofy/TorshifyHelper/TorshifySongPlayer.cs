@@ -139,16 +139,14 @@ namespace Picofy.TorshifyHelper
             Session.PlayerPlay();
         }
 
-        public void PlaySong(Song song)
+        public void PlaySong(ITrack song)
         {
-            var track = new SessionLinkFactory(Session).GetLink(song.Id).Object.Track;
-
             lock (_lockObject)
             {
                 _provider = null;
             }
 
-            if (!track.WaitUntilLoaded(500) || Session.PlayerLoad(track) != Error.OK)
+            if (!song.WaitUntilLoaded(500) || Session.PlayerLoad(song) != Error.OK)
             {
                 return;
             }

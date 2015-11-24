@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:Picofy"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:converters="clr-namespace:Picofy.Converters"
+        xmlns:torshify="clr-namespace:Torshify;assembly=Torshify"
         mc:Ignorable="d" Name="TheWindow"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         Background="{DynamicResource MaterialDesignPaper}"
@@ -13,7 +15,15 @@
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Title="Picofy" Height="493.5" Width="842" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
     <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-
+        <materialDesign:DialogHost.Resources>
+            <converters:IntToTimestampConverter x:Key="TimestampConverter" />
+            <converters:AlbumToCoverArt x:Key="AlbumToCoverArt" />
+            <converters:DateTimeRelative x:Key="DateTimeRelative" />
+            <Style BasedOn="{StaticResource MaterialDesignDataGridCell}" x:Key="songCellStyle" TargetType="{x:Type DataGridCell}">
+                <Setter Property="BorderThickness" Value="0"></Setter>
+            </Style>
+        </materialDesign:DialogHost.Resources>
+        
         <materialDesign:DialogHost.DialogContent>
             <StackPanel Margin="16">
                 <TextBlock Margin="0,0,0,10">Enter your Spotify credentials</TextBlock>
@@ -83,18 +93,30 @@
 
                     <DockPanel Dock="Bottom" LastChildFill="False">
                         <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
-                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artist.Name}"/>
+                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artists[0].Name}"/>
                         <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
                     </DockPanel>
 
-                    <Image DockPanel.Dock="Bottom" Source="{Binding CurrentSong.Album.CoverArt}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                    <Image DockPanel.Dock="Bottom" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </DockPanel>
 
                 <ListView Grid.Row="0" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
-                              Foreground="White" MouseDoubleClick="PlaylistList_MouseDoubleClick"/>
+                              Foreground="White" SelectionChanged="Selector_OnSelectionChanged" />
 
-                <GridSplitter Grid.Row="0" Grid.Column="1" Background="Transparent" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
-                <ListView Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Name="Songlist" MouseDoubleClick="Songlist_MouseDoubleClick" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="White"/>
+                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Background="Transparent" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+
+                <DataGrid Name="SongGrid" CellStyle="{StaticResource songCellStyle}" GridLinesVisibility="Horizontal"
+                          CanUserAddRows="False" CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserDeleteRows="False"
+                          CanUserSortColumns="True" CanUserResizeRows="False" AutoGenerateColumns="False" IsReadOnly="True"
+                          Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" MouseDoubleClick="SongGrid_MouseDoubleClick" SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Song" Binding="{Binding Name}" />
+                        <DataGridTextColumn Header="Artist" Binding="{Binding Artists[0].Name}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="Album" Binding="{Binding Album.Name}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="Duration" Binding="{Binding Duration}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="Added" Binding="{Binding Path=CreateTime, Converter={StaticResource DateTimeRelative}}"></DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
 
             <Grid Grid.Row="1">
@@ -103,7 +125,11 @@
                     <ColumnDefinition Width="2*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <ProgressBar Name="ProgressB" Value="{Binding Path=Player.SongProgress, Mode=OneWay}" Maximum="{Binding Player.SongDuration, Mode=OneWay}" Margin="5,0,5,0" Grid.Column="0" MouseUp="ProgressB_MouseUp"/>
+                <TextBlock Grid.Column="0" Margin="4,4,4,4" Text="{Binding Path=Player.SongProgress, Converter={StaticResource TimestampConverter}, Mode=OneWay}"></TextBlock>
+                <TextBlock Grid.Column="0" Margin="4,4,4,4" Text="{Binding Path=Player.SongDuration, Converter={StaticResource TimestampConverter}, Mode=OneWay}" HorizontalAlignment="Right"></TextBlock>
+                
+                <ProgressBar Name="ProgressB" Value="{Binding Path=Player.SongProgress, Mode=OneWay}" Maximum="{Binding Player.SongDuration, Mode=OneWay}"
+                             Margin="5,12,5,0" Grid.Column="0" MouseUp="ProgressB_MouseUp"/>
                 <Slider Name="VolumeSlider" Maximum="1" Value="{Binding Player.Volume}" Grid.Column="1" Margin="5,7,6,5"></Slider>
             </Grid>
         </Grid>

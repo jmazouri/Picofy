@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Picofy.Models;
 using Picofy.TorshifyHelper;
@@ -21,59 +22,65 @@ namespace Picofy
         public MainWindow()
         {
             Player = new MusicPlayer();
+            Player.SongFinished += delegate
+            {
+                NextSong();
+            };
             InitializeComponent();
         }
 
-
-
-        private void Songlist_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void SongGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (Songlist.SelectedItem != null)
+            if (SongGrid.SelectedItem != null)
             {
-                Player.PlaySong((Song)Songlist.SelectedItem);
+                Player.PlaySong((ITrack)SongGrid.SelectedItem);
             }
         }
 
         private void PrevButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Songlist.Items.Count == 0) { return; }
-            if (Songlist.SelectedIndex == 0)
+            if (SongGrid.Items.Count == 0) { return; }
+            if (SongGrid.SelectedIndex == 0)
             {
-                Songlist.SelectedIndex = Songlist.Items.Count - 1;
+                SongGrid.SelectedIndex = SongGrid.Items.Count - 1;
             }
             else
             {
-                Songlist.SelectedIndex--;
+                SongGrid.SelectedIndex--;
             }
 
-            Player.PlaySong((Song)Songlist.SelectedItem);
+            Player.PlaySong((ITrack)SongGrid.SelectedItem);
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Songlist.Items.Count == 0) { return; }
-            if (Songlist.SelectedIndex == Songlist.Items.Count - 1)
-            {
-                Songlist.SelectedIndex = 0;
-            }
-            else
-            {
-                Songlist.SelectedIndex++;
-            }
+            NextSong();
+        }
 
-            Player.PlaySong((Song)Songlist.SelectedItem);
+        private void NextSong()
+        {
+            Dispatcher.Invoke(delegate
+            {
+                if (SongGrid.Items.Count == 0)
+                {
+                    return;
+                }
+                if (SongGrid.SelectedIndex == SongGrid.Items.Count - 1)
+                {
+                    SongGrid.SelectedIndex = 0;
+                }
+                else
+                {
+                    SongGrid.SelectedIndex++;
+                }
+
+                Player.PlaySong((ITrack)SongGrid.SelectedItem);
+            });
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Player.SongPlayer.IsPlaying)
-            {
-                Player.SongPlayer.Pause();
-            }
-            else
-            {
-                Player.SongPlayer.Play();
-            }
+            Player.PauseToggle();
         }
 
         private void LoginButton_Click_1(object sender, RoutedEventArgs e)
@@ -97,6 +104,7 @@ namespace Picofy
                 {
                     continue;
                 }
+
                 PlaylistList.Items.Add(lst);
             }
 
@@ -107,6 +115,9 @@ namespace Picofy
         {
             playlist.WaitUntilLoaded();
 
+            SongGrid.ItemsSource = playlist.Tracks.Where(d => !d.IsLocal);
+
+            /*
             Songlist.Items.Clear();
 
             foreach (var trk in playlist.Tracks)
@@ -130,10 +141,8 @@ namespace Picofy
                     TotalSeconds = (int)trk.Duration.TotalSeconds
                 });
             }
-
-
+            */
         }
-
 
         private void TheWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -154,12 +163,13 @@ namespace Picofy
             Player?.SongPlayer?.Dispose();
         }
 
-        private void PlaylistList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (PlaylistList.SelectedItem != null)
             {
                 LoadPlaylistSongs((IContainerPlaylist)PlaylistList.SelectedItem);
             }
         }
+
     }
 }

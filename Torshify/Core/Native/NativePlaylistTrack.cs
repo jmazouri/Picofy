@@ -35,7 +35,9 @@ namespace Torshify.Core.Native
                 lock (Spotify.Mutex)
                 {
                     int trackCreateTime = Spotify.sp_playlist_track_create_time(_playlist.GetHandle(), _position);
-                    return new DateTime(TimeSpan.FromSeconds(trackCreateTime).Ticks);
+                    DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                    dtDateTime = dtDateTime.AddSeconds(trackCreateTime).ToLocalTime();
+                    return dtDateTime;
                 }
             }
         }
