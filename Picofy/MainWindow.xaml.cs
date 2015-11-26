@@ -98,8 +98,14 @@ namespace Picofy
             Player.Connect(username, password, rememberme);
             Player.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
 
+            PlaylistList.ItemsSource =
+                Player.SongPlayer.Session.PlaylistContainer.Playlists.Where(d => d.Type == PlaylistType.Playlist);
+
+            /*
             foreach (var lst in Player.SongPlayer.Session.PlaylistContainer.Playlists)
             {
+                lst.WaitUntilLoaded();
+
                 if (lst.Type != PlaylistType.Playlist)
                 {
                     continue;
@@ -107,6 +113,7 @@ namespace Picofy
 
                 PlaylistList.Items.Add(lst);
             }
+            */
 
             LoadPlaylistSongs(Player.SongPlayer.Session.PlaylistContainer.Playlists[0]);
         }
@@ -171,5 +178,16 @@ namespace Picofy
             }
         }
 
+        private void TextBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.IsRepeat || e.Key != Key.Enter)
+            {
+                return;
+            }
+
+            var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 10, 0, 0, 0, 0, 0, 0, SearchType.Standard);
+            result.WaitForCompletion();
+            SongGrid.ItemsSource = result.Tracks;
+        }
     }
 }

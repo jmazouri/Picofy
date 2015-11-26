@@ -60,9 +60,10 @@
 
             <Grid Grid.Row="0">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="3*"></RowDefinition>
+                    <RowDefinition Height="32"></RowDefinition>
+                    <RowDefinition Height="4*"></RowDefinition>
                     <RowDefinition Height="3"></RowDefinition>
-                    <RowDefinition Height="1*"></RowDefinition>
+                    <RowDefinition Height="1.5*"></RowDefinition>
                 </Grid.RowDefinitions>
                 
                 <Grid.ColumnDefinitions>
@@ -71,9 +72,20 @@
                     <ColumnDefinition Width="130*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <GridSplitter Grid.Row="1" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <TextBox Name="SearchBox" FontSize="20" Background="White" Foreground="Black" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyUp="TextBox_KeyUp"></TextBox>
 
-                <DockPanel Grid.Column="0" Grid.Row="2" DataContext="{Binding Player}">
+                <ListView Grid.Row="1" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
+                              Foreground="White" SelectionChanged="Selector_OnSelectionChanged">
+                    <ListView.ItemTemplate>
+                        <DataTemplate DataType="{x:Type torshify:IContainerPlaylist}">
+                            <TextBlock Text="{Binding Name}"></TextBlock>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <GridSplitter Grid.Row="2" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+
+                <DockPanel Grid.Column="0" Grid.Row="3" DataContext="{Binding Player}">
                     <Grid DockPanel.Dock="Bottom">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"></ColumnDefinition>
@@ -91,24 +103,36 @@
                         </Button>
                     </Grid>
 
-                    <DockPanel Dock="Bottom" LastChildFill="False">
-                        <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
-                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artists[0].Name}"/>
-                        <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Bottom" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
-                    </DockPanel>
+                    <Grid DockPanel.Dock="Bottom">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"></ColumnDefinition>
+                            <ColumnDefinition Width="3"></ColumnDefinition>
+                            <ColumnDefinition Width="3*"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
 
-                    <Image DockPanel.Dock="Bottom" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                        <Image Grid.Column="0" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                        <GridSplitter Grid.Column="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeDirection="Columns" />
+
+                        <DockPanel VerticalAlignment="Stretch" Grid.Column="2">
+                            <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Top" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
+                            <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
+                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artists[0].Name}"/>
+                        </DockPanel>
+                    </Grid>
                 </DockPanel>
 
-                <ListView Grid.Row="0" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
-                              Foreground="White" SelectionChanged="Selector_OnSelectionChanged" />
-
-                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Background="Transparent" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
 
                 <DataGrid Name="SongGrid" CellStyle="{StaticResource songCellStyle}" GridLinesVisibility="Horizontal"
                           CanUserAddRows="False" CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserDeleteRows="False"
                           CanUserSortColumns="True" CanUserResizeRows="False" AutoGenerateColumns="False" IsReadOnly="True"
-                          Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" MouseDoubleClick="SongGrid_MouseDoubleClick" SelectionMode="Single">
+                          Grid.Row="0" Grid.RowSpan="4" Grid.Column="2" SelectionMode="Single">
+                    <DataGrid.Resources>
+                        <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
+                            <EventSetter Event="MouseDoubleClick" Handler="SongGrid_MouseDoubleClick"/>
+                        </Style>
+                    </DataGrid.Resources>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Song" Binding="{Binding Name}" />
                         <DataGridTextColumn Header="Artist" Binding="{Binding Artists[0].Name}"></DataGridTextColumn>
