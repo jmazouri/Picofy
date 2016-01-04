@@ -68,6 +68,11 @@ namespace Torshify.Core.Native
             }
         }
 
+        public override string ToString()
+        {
+            return Name;
+        }
+
         #endregion Public Methods
 
         #region Protected Methods

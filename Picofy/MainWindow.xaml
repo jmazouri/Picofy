@@ -19,6 +19,7 @@
             <converters:IntToTimestampConverter x:Key="TimestampConverter" />
             <converters:AlbumToCoverArt x:Key="AlbumToCoverArt" />
             <converters:DateTimeRelative x:Key="DateTimeRelative" />
+            <converters:ArrayToCsv x:Key="ArrayToCsv" />
             <Style BasedOn="{StaticResource MaterialDesignDataGridCell}" x:Key="songCellStyle" TargetType="{x:Type DataGridCell}">
                 <Setter Property="BorderThickness" Value="0"></Setter>
             </Style>
@@ -135,7 +136,8 @@
                     </DataGrid.Resources>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Song" Binding="{Binding Name}" />
-                        <DataGridTextColumn Header="Artist" Binding="{Binding Artists[0].Name}"></DataGridTextColumn>
+                        <!--<DataGridTextColumn Header="Artist" Binding="{Binding Artists[0].Name}"></DataGridTextColumn>-->
+                        <DataGridTextColumn Header="Added" Binding="{Binding Path=Artists, Converter={StaticResource ArrayToCsv}}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Album" Binding="{Binding Album.Name}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Duration" Binding="{Binding Duration}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Added" Binding="{Binding Path=CreateTime, Converter={StaticResource DateTimeRelative}}"></DataGridTextColumn>
