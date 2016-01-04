@@ -7,8 +7,11 @@ using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NAudio.Utils;
-using NAudio.Wave;
+using CSCore;
+using CSCore.Codecs;
+using CSCore.SoundIn;
+using CSCore.SoundOut;
+using CSCore.Streams;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Picofy.Models;
@@ -19,7 +22,7 @@ namespace Picofy.TorshifyHelper
     public class TorshifySongPlayer : IDisposable
     {
         public readonly ISession Session;
-        private BufferedWaveProvider _provider;
+        private WriteableBufferingSource _provider;
         private WaveOut _waveOut;
 
         private readonly object _lockObject = new object();
@@ -69,11 +72,10 @@ namespace Picofy.TorshifyHelper
             {
                 wait.Set();
 
-                _waveOut = new WaveOut();
-                _waveOut.Volume = 0.25f;
-
-                Session.MusicDeliver += _session_MusicDeliver;
+                _waveOut = new WaveOut {Volume = 0.25f};
             };
+
+            Session.MusicDeliver += _session_MusicDeliver;
 
             if (username != null && password != null)
             {
@@ -93,21 +95,20 @@ namespace Picofy.TorshifyHelper
 
             lock (_lockObject)
             {
-                if ((_provider == null || e.Frames == 0))
+                if (_provider == null)
                 {
-                    _provider = new BufferedWaveProvider(new WaveFormat(e.Rate, e.Channels))
-                    {
-                        BufferDuration = TimeSpan.FromSeconds(0.5)
-                    };
+                    _provider = new WriteableBufferingSource(new WaveFormat(e.Rate, 16, e.Channels, AudioEncoding.Pcm), (e.Rate * 2));
+                }
 
-                    _waveOut.Init(_provider);
-
+                if (_waveOut.PlaybackState == PlaybackState.Stopped)
+                {
+                    _waveOut.Initialize(_provider);
                     _waveOut.Play();
                 }
 
-                if ((_provider.BufferLength - _provider.BufferedBytes) > e.Samples.Length)
+                if ((_provider.MaxBufferSize - _provider.Length) > e.Samples.Length)
                 {
-                    _provider.AddSamples(e.Samples, 0, e.Samples.Length);
+                    _provider.Write(e.Samples, 0, e.Samples.Length);
                     consumed = e.Frames;
                 }
             }
@@ -143,6 +144,7 @@ namespace Picofy.TorshifyHelper
         {
             lock (_lockObject)
             {
+                _waveOut.Stop();
                 _provider = null;
             }
 
@@ -156,17 +158,6 @@ namespace Picofy.TorshifyHelper
 
         public void Dispose()
         {
-            //Session?.PlayerPause();
-            //Session?.PlayerUnload();
-            //Session?.Logout();
-            //Session.LogoutComplete += delegate
-            //{
-            //    Session?.Dispose();
-            //    _waveOut?.Dispose();
-            //};
-
-            //Session?.PlayerUnload();
-
             Session.LogoutComplete += delegate
             {
                 Session.Dispose();
