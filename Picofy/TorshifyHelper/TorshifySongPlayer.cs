@@ -124,8 +124,8 @@ namespace Picofy.TorshifyHelper
                 return;
             }
 
-            _waveOut.Pause();
             Session.PlayerPause();
+            _waveOut.Pause();
         }
 
         public void Play()
