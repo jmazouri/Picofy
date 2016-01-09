@@ -14,6 +14,10 @@
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Title="Picofy" Height="493.5" Width="842" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
+    <Window.CommandBindings>
+        <CommandBinding Command="ApplicationCommands.Close" Executed="CloseCommandHandler"/>
+    </Window.CommandBindings>
+    
     <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <materialDesign:DialogHost.Resources>
             <converters:IntToTimestampConverter x:Key="TimestampConverter" />
@@ -24,11 +28,11 @@
                 <Setter Property="BorderThickness" Value="0"></Setter>
             </Style>
         </materialDesign:DialogHost.Resources>
-        
+
         <materialDesign:DialogHost.DialogContent>
             <StackPanel Margin="16">
                 <TextBlock Margin="0,0,0,10">Enter your Spotify credentials</TextBlock>
-                
+
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Margin="0,8,10,0">Username</TextBlock>
                     <TextBox Name="UsernameBox" Width="100" />
@@ -38,7 +42,7 @@
                     <TextBlock Margin="0,8,10,0">Password</TextBlock>
                     <PasswordBox Name="PasswordBox" Width="100" />
                 </StackPanel>
-                
+
                 <CheckBox Name="Remember" Content="Remember" Margin="0,5,0,0" HorizontalAlignment="Center"></CheckBox>
 
                 <!--<TextBlock Name="ErrorText" Foreground="#DDFF0000" ></TextBlock>-->
@@ -49,31 +53,51 @@
 
             </StackPanel>
         </materialDesign:DialogHost.DialogContent>
-        
+
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="32"></RowDefinition>
                 <RowDefinition Height="1*"></RowDefinition>
                 <RowDefinition Height="32"></RowDefinition>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <Menu Grid.Row="0" BorderThickness="0,0,0,2" BorderBrush="#FF4F5659">
+                <MenuItem FontSize="12" Height="32" Header="_File">
+                    <MenuItem Header="_Quit" Command="ApplicationCommands.Close" ></MenuItem>
+                </MenuItem>
+                <MenuItem Name="PluginsMenu" FontSize="12" Height="32" Header="_Plugins" ItemsSource="{Binding Player.Plugins}">
+                    <MenuItem.ItemTemplate>
+                        <DataTemplate>
+                            <Button Click="ButtonBase_OnClick" Content="{Binding Name}"></Button>
+                        </DataTemplate>
+                    </MenuItem.ItemTemplate>
+                </MenuItem>
+            </Menu>
+
+            <Grid Grid.Row="1">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="32"></RowDefinition>
+                    <RowDefinition Height="28"></RowDefinition>
                     <RowDefinition Height="4*"></RowDefinition>
                     <RowDefinition Height="3"></RowDefinition>
                     <RowDefinition Height="1.5*"></RowDefinition>
                 </Grid.RowDefinitions>
-                
+
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70*"></ColumnDefinition>
-                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="2"></ColumnDefinition>
                     <ColumnDefinition Width="130*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Name="SearchBox" FontSize="20" Background="White" Foreground="Black" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyUp="TextBox_KeyUp"></TextBox>
+                <Grid>
+                    <Grid.Resources>
+                        <ImageBrush x:Key="img" AlignmentX="Right" ImageSource="/Icons/search.png" Stretch="None" />
+                    </Grid.Resources>
+
+                    <TextBox Name="SearchBox" FontSize="16" Background="{StaticResource img}" Foreground="White" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyUp="TextBox_KeyUp" />
+                </Grid>
 
                 <ListView Grid.Row="1" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
                               Foreground="White" SelectionChanged="Selector_OnSelectionChanged">
@@ -116,14 +140,14 @@
                         <GridSplitter Grid.Column="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeDirection="Columns" />
 
                         <DockPanel VerticalAlignment="Stretch" Grid.Column="2">
-                            <TextBlock TextWrapping="WrapWithOverflow" Padding="5,5,5,0" DockPanel.Dock="Top" FontSize="21.333" Text="{Binding CurrentSong.Name}"/>
-                            <TextBlock TextWrapping="WrapWithOverflow" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
-                                   Padding="5,0,5,5" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding CurrentSong.Artists[0].Name}"/>
+                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" Padding="5,0" DockPanel.Dock="Top" FontSize="21.333" Text="{Binding CurrentSong.Name}" LineHeight="10"/>
+                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="WordEllipsis" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
+                                   Padding="5,0" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding Path=CurrentSong.Artists, Converter={StaticResource ArrayToCsv}}" />
                         </DockPanel>
                     </Grid>
                 </DockPanel>
 
-                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
 
                 <DataGrid Name="SongGrid" CellStyle="{StaticResource songCellStyle}" GridLinesVisibility="Horizontal"
                           CanUserAddRows="False" CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserDeleteRows="False"
@@ -145,7 +169,7 @@
                 </DataGrid>
             </Grid>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="8*"></ColumnDefinition>
                     <ColumnDefinition Width="2*"></ColumnDefinition>
@@ -153,7 +177,7 @@
 
                 <TextBlock Grid.Column="0" Margin="4,4,4,4" Text="{Binding Path=Player.SongProgress, Converter={StaticResource TimestampConverter}, Mode=OneWay}"></TextBlock>
                 <TextBlock Grid.Column="0" Margin="4,4,4,4" Text="{Binding Path=Player.SongDuration, Converter={StaticResource TimestampConverter}, Mode=OneWay}" HorizontalAlignment="Right"></TextBlock>
-                
+
                 <ProgressBar Name="ProgressB" Value="{Binding Path=Player.SongProgress, Mode=OneWay}" Maximum="{Binding Player.SongDuration, Mode=OneWay}"
                              Margin="5,12,5,0" Grid.Column="0" MouseUp="ProgressB_MouseUp"/>
                 <Slider Name="VolumeSlider" Maximum="1" Value="{Binding Player.Volume}" Grid.Column="1" Margin="5,7,6,5"></Slider>

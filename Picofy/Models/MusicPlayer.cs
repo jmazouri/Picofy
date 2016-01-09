@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Timers;
 using Picofy.Annotations;
+using Picofy.Plugins;
 using Picofy.TorshifyHelper;
 using Torshify;
 
@@ -20,18 +23,11 @@ namespace Picofy.Models
 
         public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
 
-        private float _volume;
-
         public float Volume
         {
-            get { return _volume; }
+            get { return SongPlayer?.Volume ?? 0; }
             set
             {
-                if (value.Equals(_volume))
-                {
-                    return;
-                }
-                _volume = value;
                 SongPlayer.Volume = value;
                 OnPropertyChanged();
             }
@@ -75,36 +71,44 @@ namespace Picofy.Models
 
         public TorshifySongPlayer SongPlayer;
 
-        public void Connect(string username, string password, bool rememberme)
-        {
-            if (SongPlayer == null)
-            {
-                SongPlayer = new TorshifySongPlayer(username, password, rememberme);
-                _volume = 0.25f;
-                OnPropertyChanged(nameof(Volume));
-            }
-        }
+        public static List<BasicPlugin> Plugins { get; private set; }
 
         public MusicPlayer()
         {
             _songTimer = new Timer(1000);
-            _songTimer.Elapsed += delegate
-            {
-                OnPropertyChanged(nameof(RequiresLogin));
-
-                if (SongProgress >= SongDuration)
-                {
-                    if (SongDuration > 0)
-                    {
-                        OnSongFinished();
-                    }
-                    return;
-                }
-
-                _songProgress++;
-                OnPropertyChanged(nameof(SongProgress));
-            };
+            _songTimer.Elapsed += SongTimerOnElapsed;
             _songTimer.Start();
+
+            Plugins = PluginContainer.Current.Container.GetExports<BasicPlugin>().Select(d=>d.Value).Where(d=>d != null).ToList();
+        }
+
+        private void SongTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+        {
+            OnPropertyChanged(nameof(RequiresLogin));
+
+            if (SongProgress >= SongDuration)
+            {
+                if (SongDuration > 0)
+                {
+                    OnSongFinished();
+                }
+                return;
+            }
+
+            _songProgress++;
+
+            OnPropertyChanged(nameof(SongProgress));
+        }
+
+        public void Connect(string username, string password, bool rememberme)
+        {
+            if (SongPlayer != null)
+            {
+                return;
+            }
+
+            SongPlayer = new TorshifySongPlayer(username, password, rememberme);
+            OnPropertyChanged(nameof(Volume));
         }
 
         public void PlaySong(ITrack song)
@@ -115,6 +119,11 @@ namespace Picofy.Models
             _songProgress = 0;
             SongPlayer.PlaySong(CurrentSong);
 
+            foreach (BasicPlugin plugin in Plugins)
+            {
+                plugin.SongPlay(CurrentSong);
+            }
+
             _songTimer.Start();
         }
 
@@ -124,11 +133,21 @@ namespace Picofy.Models
             {
                 _songTimer.Stop();
                 SongPlayer.Pause();
+
+                foreach (BasicPlugin plugin in Plugins)
+                {
+                    plugin.SongPaused();
+                }
             }
             else
             {
                 _songTimer.Start();
                 SongPlayer.Play();
+
+                foreach (BasicPlugin plugin in Plugins)
+                {
+                    plugin.SongPlay(CurrentSong);
+                }
             }
         }
 

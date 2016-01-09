@@ -7,14 +7,17 @@ using System.Security.Authentication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using CSCore;
 using CSCore.Codecs;
+using CSCore.Codecs.WAV;
 using CSCore.SoundIn;
 using CSCore.SoundOut;
 using CSCore.Streams;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Picofy.Models;
+using Picofy.Plugins;
 using Torshify;
 
 namespace Picofy.TorshifyHelper
@@ -29,14 +32,16 @@ namespace Picofy.TorshifyHelper
 
         private ManualResetEvent wait = new ManualResetEvent(false);
 
+        private float _volume = 0.25f;
         public float Volume
         {
-            get { return _waveOut?.Volume ?? 0; }
+            get { return _waveOut?.Volume ?? _volume; }
             set
             {
+                _volume = value;
                 if (_waveOut != null)
                 {
-                    _waveOut.Volume = value;
+                    _waveOut.Volume = _volume;
                 }
             }
         }
@@ -71,8 +76,6 @@ namespace Picofy.TorshifyHelper
             Session.LoginComplete += (sender, eventArgs) =>
             {
                 wait.Set();
-
-                _waveOut = new WaveOut {Volume = 0.25f};
             };
 
             Session.MusicDeliver += _session_MusicDeliver;
@@ -86,6 +89,8 @@ namespace Picofy.TorshifyHelper
                 Session.Relogin();
             }
 
+            _waveOut = new WaveOut();
+
             wait.WaitOne(10000);
         }
 
@@ -97,13 +102,31 @@ namespace Picofy.TorshifyHelper
             {
                 if (_provider == null)
                 {
-                    _provider = new WriteableBufferingSource(new WaveFormat(e.Rate, 16, e.Channels, AudioEncoding.Pcm), (e.Rate * 2));
+                    _provider = new WriteableBufferingSource(new WaveFormat(e.Rate, 16, e.Channels, AudioEncoding.Pcm), (e.Rate * 2))
+                    {
+                        FillWithZeros = false
+                    };
                 }
 
-                if (_waveOut.PlaybackState == PlaybackState.Stopped)
+                List<bool> results = new List<bool>();
+
+                foreach (BasicPlugin plugin in MusicPlayer.Plugins)
+                {
+                    results.Add(plugin.MusicDeliver(new PluginMusicDeliveryArgs(e, _provider)));
+                }
+
+                bool continuePlay = results.Any(d => d);
+
+                if (continuePlay && _waveOut.PlaybackState == PlaybackState.Stopped)
                 {
                     _waveOut.Initialize(_provider);
+                    _waveOut.Volume = _volume;
                     _waveOut.Play();
+                }
+
+                if (!continuePlay)
+                {
+                    _waveOut.Stop();
                 }
 
                 if ((_provider.MaxBufferSize - _provider.Length) > e.Samples.Length)
@@ -142,14 +165,20 @@ namespace Picofy.TorshifyHelper
 
         public void PlaySong(ITrack song)
         {
+            _waveOut?.Stop();
+            Session.PlayerPause();
+            Session.PlayerUnload();
+
             lock (_lockObject)
             {
-                _waveOut.Stop();
                 _provider = null;
             }
 
-            if (!song.WaitUntilLoaded(500) || Session.PlayerLoad(song) != Error.OK)
+            var errorCode = Session.PlayerLoad(song);
+
+            if (!song.WaitUntilLoaded(500) || errorCode != Error.OK)
             {
+                MessageBox.Show("Error: " + errorCode);
                 return;
             }
 

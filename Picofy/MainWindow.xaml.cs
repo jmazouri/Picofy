@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Picofy.Models;
+using Picofy.Plugins;
 using Picofy.TorshifyHelper;
 using Torshify;
 
@@ -167,6 +168,10 @@ namespace Picofy
 
         private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            foreach (BasicPlugin plugin in MusicPlayer.Plugins)
+            {
+                plugin.Dispose();
+            }
             Player?.SongPlayer?.Dispose();
         }
 
@@ -188,6 +193,25 @@ namespace Picofy
             var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 10, 0, 0, 0, 0, 0, 0, SearchType.Standard);
             result.WaitForCompletion();
             SongGrid.ItemsSource = result.Tracks;
+        }
+
+        private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            var source = sender as Button;
+
+            if (source == null)
+            {
+                return;
+            }
+
+            var foundPlugin = MusicPlayer.Plugins.FirstOrDefault(d => d.Name == (string)source.Content);
+
+            foundPlugin?.ShowDialog();
         }
     }
 }
