@@ -22,7 +22,7 @@ namespace Picofy
 
         public MainWindow()
         {
-            Player = new MusicPlayer();
+            Player = MusicPlayer.Current;
             Player.SongFinished += delegate
             {
                 NextSong();
@@ -168,7 +168,7 @@ namespace Picofy
 
         private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            foreach (BasicPlugin plugin in MusicPlayer.Plugins)
+            foreach (BasicPlugin plugin in MusicPlayer.Current.Plugins)
             {
                 plugin.Dispose();
             }
@@ -209,7 +209,7 @@ namespace Picofy
                 return;
             }
 
-            var foundPlugin = MusicPlayer.Plugins.FirstOrDefault(d => d.Name == (string)source.Content);
+            var foundPlugin = MusicPlayer.Current.Plugins.FirstOrDefault(d => d.Name == (string)source.Content);
 
             foundPlugin?.ShowDialog();
         }

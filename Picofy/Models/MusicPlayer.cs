@@ -23,12 +23,20 @@ namespace Picofy.Models
 
         public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
 
+        private float _volume = 0.25f;
         public float Volume
         {
-            get { return SongPlayer?.Volume ?? 0; }
+            get { return _volume; }
             set
             {
-                SongPlayer.Volume = value;
+                _volume = value;
+
+                try
+                {
+                    SongPlayer.Volume = _volume;
+                }
+                catch { }
+
                 OnPropertyChanged();
             }
         }
@@ -71,7 +79,10 @@ namespace Picofy.Models
 
         public TorshifySongPlayer SongPlayer;
 
-        public static List<BasicPlugin> Plugins { get; private set; }
+        public List<BasicPlugin> Plugins { get; private set; }
+
+        private static MusicPlayer _current;
+        public static MusicPlayer Current => _current ?? (_current = new MusicPlayer());
 
         public MusicPlayer()
         {

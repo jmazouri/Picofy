@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CSCore;
 using CSCore.Streams;
+using Picofy.Models;
 using Torshify;
 
 namespace Picofy.Plugins

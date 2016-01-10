@@ -46,6 +46,8 @@ namespace Picofy.TorshifyHelper
             }
         }
 
+        public bool _continuePlay = true;
+
         public static bool HasSavedCredentials()
         {
             string dataPath = Path.Combine(Directory.GetCurrentDirectory(), "PicofyData", "Settings", "settings");
@@ -108,25 +110,22 @@ namespace Picofy.TorshifyHelper
                     };
                 }
 
-                List<bool> results = new List<bool>();
+                List<bool> results = MusicPlayer.Current.Plugins.Select(plugin => plugin.MusicDeliver(new PluginMusicDeliveryArgs(e, _provider))).ToList();
 
-                foreach (BasicPlugin plugin in MusicPlayer.Plugins)
+                _continuePlay = results.Count == 0 || results.All(result => !result);
+
+                if (!_continuePlay)
                 {
-                    results.Add(plugin.MusicDeliver(new PluginMusicDeliveryArgs(e, _provider)));
+                    _waveOut?.Stop();
+                    _waveOut?.Dispose();
+                    _waveOut = null;
                 }
 
-                bool continuePlay = results.Any(d => d);
-
-                if (continuePlay && _waveOut.PlaybackState == PlaybackState.Stopped)
+                if (_continuePlay && _waveOut.PlaybackState == PlaybackState.Stopped)
                 {
                     _waveOut.Initialize(_provider);
                     _waveOut.Volume = _volume;
                     _waveOut.Play();
-                }
-
-                if (!continuePlay)
-                {
-                    _waveOut.Stop();
                 }
 
                 if ((_provider.MaxBufferSize - _provider.Length) > e.Samples.Length)
