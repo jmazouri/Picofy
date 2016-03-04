@@ -29,6 +29,7 @@ namespace Picofy.TorshifyHelper
         private WaveOut _waveOut;
 
         private readonly object _lockObject = new object();
+        
 
         private ManualResetEvent wait = new ManualResetEvent(false);
 
@@ -46,7 +47,8 @@ namespace Picofy.TorshifyHelper
             }
         }
 
-        public bool _continuePlay = true;
+        private bool _continuePlay = true;
+        private bool _oldContinueState = false;
 
         public static bool HasSavedCredentials()
         {
@@ -108,6 +110,10 @@ namespace Picofy.TorshifyHelper
                     {
                         FillWithZeros = false
                     };
+
+                    _waveOut.Stop();
+                    _waveOut.Initialize(_provider);
+                    _waveOut.Volume = _volume;
                 }
 
                 List<bool> results = MusicPlayer.Current.Plugins.Select(plugin => plugin.MusicDeliver(new PluginMusicDeliveryArgs(e, _provider))).ToList();
@@ -117,14 +123,10 @@ namespace Picofy.TorshifyHelper
                 if (!_continuePlay)
                 {
                     _waveOut?.Stop();
-                    _waveOut?.Dispose();
-                    _waveOut = null;
                 }
 
-                if (_continuePlay && _waveOut.PlaybackState == PlaybackState.Stopped)
+                if (_continuePlay)
                 {
-                    _waveOut.Initialize(_provider);
-                    _waveOut.Volume = _volume;
                     _waveOut.Play();
                 }
 

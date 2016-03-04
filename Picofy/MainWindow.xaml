@@ -87,7 +87,7 @@
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="70*"></ColumnDefinition>
-                    <ColumnDefinition Width="2"></ColumnDefinition>
+                    <ColumnDefinition Width="4"></ColumnDefinition>
                     <ColumnDefinition Width="130*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
@@ -180,7 +180,7 @@
 
                 <ProgressBar Name="ProgressB" Value="{Binding Path=Player.SongProgress, Mode=OneWay}" Maximum="{Binding Player.SongDuration, Mode=OneWay}"
                              Margin="5,12,5,0" Grid.Column="0" MouseUp="ProgressB_MouseUp"/>
-                <Slider Name="VolumeSlider" Maximum="1" Value="{Binding Player.Volume}" Grid.Column="1" Margin="5,7,6,5"></Slider>
+                <Slider Name="VolumeSlider" Maximum="1" Value="{Binding Player.Volume}" Grid.Column="1" Margin="5,7,6,5" TickFrequency="0.1"></Slider>
             </Grid>
         </Grid>
     </materialDesign:DialogHost>
