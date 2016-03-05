@@ -1,14 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
+using Newtonsoft.Json;
 using Picofy.Models;
 using Picofy.Plugins;
 using Picofy.TorshifyHelper;
+using Picofy.UIModels;
 using Torshify;
 
 namespace Picofy
@@ -27,7 +33,16 @@ namespace Picofy
             {
                 NextSong();
             };
+
             InitializeComponent();
+
+            SongGrid.Sorting += (sender, args) => 
+            PicofyConfiguration.CurrentConfiguration.SetSortingForPlaylist(Player.CurrentPlaylist.Name,
+                new PlaylistSorting
+                {
+                    ColumnName = args.Column.SortMemberPath,
+                    SortDirection = args.Column.SortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending
+                });
         }
 
         private void SongGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -99,57 +114,45 @@ namespace Picofy
             Player.Connect(username, password, rememberme);
             Player.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
 
-            PlaylistList.ItemsSource =
-                Player.SongPlayer.Session.PlaylistContainer.Playlists.Where(d => d.Type == PlaylistType.Playlist);
 
-            /*
-            foreach (var lst in Player.SongPlayer.Session.PlaylistContainer.Playlists)
+            var allPlaylists = Player.SongPlayer.Session.PlaylistContainer.Playlists.Where(d => d.Type == PlaylistType.Playlist);
+
+            foreach (var lst in allPlaylists)
             {
-                lst.WaitUntilLoaded();
-
-                if (lst.Type != PlaylistType.Playlist)
-                {
-                    continue;
-                }
-
-                PlaylistList.Items.Add(lst);
+                lst.WaitUntilLoaded(2500);
             }
-            */
 
-            LoadPlaylistSongs(Player.SongPlayer.Session.PlaylistContainer.Playlists[0]);
+            PlaylistList.ItemsSource = allPlaylists;
+
+            LoadPlaylistSongs(allPlaylists.First());
         }
 
         void LoadPlaylistSongs(IContainerPlaylist playlist)
         {
             playlist.WaitUntilLoaded();
+            Player.CurrentPlaylist = playlist;
 
-            SongGrid.ItemsSource = playlist.Tracks.Where(d => !d.IsLocal);
+            SongGrid.ItemsSource = Player.CurrentPlaylist.Tracks.Where(d => !d.IsLocal);
 
-            /*
-            Songlist.Items.Clear();
+            PlaylistSorting currentSort = PicofyConfiguration.CurrentConfiguration.GetSortingForPlaylist(playlist.Name);
 
-            foreach (var trk in playlist.Tracks)
+            SongGrid.Items.SortDescriptions.Clear();
+
+            if (currentSort == null) return;
+
+            SongGrid.Items.SortDescriptions.Add(new SortDescription
             {
-                trk.WaitUntilLoaded();
+                PropertyName = currentSort.ColumnName,
+                Direction = currentSort.SortDirection.GetValueOrDefault()
+            });
 
-                if (trk.IsLocal) { continue; }
-
-                Songlist.Items.Add(new Song
-                {
-                    Id = trk.ToLink().AsUri(),
-                    Name = trk.Name,
-                    Artist = new Artist
-                    {
-                        Name = trk.Artists.First().Name
-                    },
-                    Album = new Album
-                    {
-                        CoverArt = "https://i.scdn.co/image/" + trk.Album?.CoverId
-                    },
-                    TotalSeconds = (int)trk.Duration.TotalSeconds
-                });
+            foreach (var col in SongGrid.Columns)
+            {
+                col.SortDirection = null;
             }
-            */
+
+            SongGrid.Columns.FirstOrDefault(d => d.SortMemberPath == currentSort.ColumnName).SortDirection = currentSort.SortDirection;
+            SongGrid.Items.Refresh();
         }
 
         private void TheWindow_Loaded(object sender, RoutedEventArgs e)
@@ -190,7 +193,7 @@ namespace Picofy
                 return;
             }
 
-            var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 10, 0, 0, 0, 0, 0, 0, SearchType.Standard);
+            var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 50, 0, 0, 0, 0, 0, 0, SearchType.Suggest);
             result.WaitForCompletion();
             SongGrid.ItemsSource = result.Tracks;
         }

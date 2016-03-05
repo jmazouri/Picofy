@@ -13,11 +13,11 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Picofy" Height="493.5" Width="842" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
+        Title="Picofy" Height="750" Width="1000" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Close" Executed="CloseCommandHandler"/>
     </Window.CommandBindings>
-    
+
     <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <materialDesign:DialogHost.Resources>
             <converters:IntToTimestampConverter x:Key="TimestampConverter" />
@@ -81,8 +81,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="28"></RowDefinition>
                     <RowDefinition Height="4*"></RowDefinition>
-                    <RowDefinition Height="3"></RowDefinition>
-                    <RowDefinition Height="1.5*"></RowDefinition>
+                    <RowDefinition Height="4"></RowDefinition>
+                    <RowDefinition Height="5*"></RowDefinition>
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
@@ -108,10 +108,32 @@
                     </ListView.ItemTemplate>
                 </ListView>
 
-                <GridSplitter Grid.Row="2" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                <GridSplitter Grid.Row="2" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
 
-                <DockPanel Grid.Column="0" Grid.Row="3" DataContext="{Binding Player}">
-                    <Grid DockPanel.Dock="Bottom">
+                <Grid Grid.Column="0" Grid.Row="3" DataContext="{Binding Player}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*"></RowDefinition>
+                        <RowDefinition Height="35"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid Grid.Row="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="4*"></RowDefinition>
+                            <RowDefinition Height="4"></RowDefinition>
+                            <RowDefinition Height="2*"></RowDefinition>
+                        </Grid.RowDefinitions>
+
+                        <Image Grid.Row="0" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2"/>
+
+                        <GridSplitter Grid.Row="1" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
+                        
+                        <DockPanel VerticalAlignment="Stretch" Grid.Row="2">
+                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" Padding="5,0" DockPanel.Dock="Top" FontSize="18" Text="{Binding CurrentSong.Name}" LineHeight="10"/>
+                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="WordEllipsis" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
+                                   Padding="5,0" DockPanel.Dock="Bottom" FontSize="14" Text="{Binding Path=CurrentSong.Artists, Converter={StaticResource ArrayToCsv}}" />
+                        </DockPanel>
+                    </Grid>
+                    <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"></ColumnDefinition>
                             <ColumnDefinition Width="1*"></ColumnDefinition>
@@ -127,25 +149,7 @@
                             <Image Source="/Icons/skip-next.png"></Image>
                         </Button>
                     </Grid>
-
-                    <Grid DockPanel.Dock="Bottom">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"></ColumnDefinition>
-                            <ColumnDefinition Width="3"></ColumnDefinition>
-                            <ColumnDefinition Width="3*"></ColumnDefinition>
-                        </Grid.ColumnDefinitions>
-
-                        <Image Grid.Column="0" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-
-                        <GridSplitter Grid.Column="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeDirection="Columns" />
-
-                        <DockPanel VerticalAlignment="Stretch" Grid.Column="2">
-                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" Padding="5,0" DockPanel.Dock="Top" FontSize="21.333" Text="{Binding CurrentSong.Name}" LineHeight="10"/>
-                            <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="WordEllipsis" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
-                                   Padding="5,0" DockPanel.Dock="Bottom" FontSize="16" Text="{Binding Path=CurrentSong.Artists, Converter={StaticResource ArrayToCsv}}" />
-                        </DockPanel>
-                    </Grid>
-                </DockPanel>
+                </Grid>
 
                 <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
 
@@ -161,7 +165,7 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Song" Binding="{Binding Name}" />
                         <!--<DataGridTextColumn Header="Artist" Binding="{Binding Artists[0].Name}"></DataGridTextColumn>-->
-                        <DataGridTextColumn Header="Added" Binding="{Binding Path=Artists, Converter={StaticResource ArrayToCsv}}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="Artist" Binding="{Binding Path=Artists, Converter={StaticResource ArrayToCsv}}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Album" Binding="{Binding Album.Name}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Duration" Binding="{Binding Duration}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Added" Binding="{Binding Path=CreateTime, Converter={StaticResource DateTimeRelative}}"></DataGridTextColumn>

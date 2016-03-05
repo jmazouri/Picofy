@@ -58,6 +58,20 @@ namespace Picofy.Models
             }
         }
 
+        private IPlaylist _currentPlaylist;
+
+        public IPlaylist CurrentPlaylist
+        {
+            get
+            {
+                return _currentPlaylist;
+            }
+            set
+            {
+                _currentPlaylist = value;
+            }
+        }
+
         private readonly Timer _songTimer;
 
         private int _songProgress;
