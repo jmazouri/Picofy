@@ -25,19 +25,24 @@ namespace Picofy
     public partial class MainWindow : Window
     {
         public MusicPlayer Player { get; set; }
+        private TorshifySessionManager SessionManager;
+        private IPlaylist _activePlaylist;
 
         public MainWindow()
         {
             Player = MusicPlayer.Current;
-            Player.SongFinished += delegate
+
+            SessionManager = new TorshifySessionManager();
+            SessionManager.LoginFinished += () =>
             {
-                NextSong();
+                PlaylistList.ItemsSource = SessionManager.Playlists;
+                LoadPlaylistSongs(SessionManager.Playlists.First());
             };
 
             InitializeComponent();
 
             SongGrid.Sorting += (sender, args) => 
-            PicofyConfiguration.CurrentConfiguration.SetSortingForPlaylist(Player.CurrentPlaylist.Name,
+            PicofyConfiguration.CurrentConfiguration.SetSortingForPlaylist(_activePlaylist.Name,
                 new PlaylistSorting
                 {
                     ColumnName = args.Column.SortMemberPath,
@@ -49,49 +54,19 @@ namespace Picofy
         {
             if (SongGrid.SelectedItem != null)
             {
-                Player.PlaySong((ITrack)SongGrid.SelectedItem);
+                Player.CurrentPlaylist = _activePlaylist;
+                Player.PlaySong((IPlaylistTrack)SongGrid.SelectedItem);
             }
-        }
-
-        private void PrevButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (SongGrid.Items.Count == 0) { return; }
-            if (SongGrid.SelectedIndex == 0)
-            {
-                SongGrid.SelectedIndex = SongGrid.Items.Count - 1;
-            }
-            else
-            {
-                SongGrid.SelectedIndex--;
-            }
-
-            Player.PlaySong((ITrack)SongGrid.SelectedItem);
         }
 
         private void NextButton_Click(object sender, RoutedEventArgs e)
         {
-            NextSong();
+            Player.NextSong();
         }
 
-        private void NextSong()
+        private void PrevButton_Click(object sender, RoutedEventArgs e)
         {
-            Dispatcher.Invoke(delegate
-            {
-                if (SongGrid.Items.Count == 0)
-                {
-                    return;
-                }
-                if (SongGrid.SelectedIndex == SongGrid.Items.Count - 1)
-                {
-                    SongGrid.SelectedIndex = 0;
-                }
-                else
-                {
-                    SongGrid.SelectedIndex++;
-                }
-
-                Player.PlaySong((ITrack)SongGrid.SelectedItem);
-            });
+            Player.PrevSong();
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
@@ -106,33 +81,20 @@ namespace Picofy
                 return;
             }
 
-            DoTempLogon(UsernameBox.Text, PasswordBox.Password, Remember.IsChecked == true);
+            SessionManager.Login(UsernameBox.Text, PasswordBox.Password, Remember.IsChecked == true);
         }
 
-        private void DoTempLogon(string username, string password, bool rememberme)
+        private void TheWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            Player.Connect(username, password, rememberme);
-            Player.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
-
-
-            var allPlaylists = Player.SongPlayer.Session.PlaylistContainer.Playlists.Where(d => d.Type == PlaylistType.Playlist);
-
-            foreach (var lst in allPlaylists)
-            {
-                lst.WaitUntilLoaded(2500);
-            }
-
-            PlaylistList.ItemsSource = allPlaylists;
-
-            LoadPlaylistSongs(allPlaylists.First());
+            SessionManager.Login();
         }
 
         void LoadPlaylistSongs(IContainerPlaylist playlist)
         {
             playlist.WaitUntilLoaded();
-            Player.CurrentPlaylist = playlist;
+            _activePlaylist = playlist;
 
-            SongGrid.ItemsSource = Player.CurrentPlaylist.Tracks.Where(d => !d.IsLocal);
+            SongGrid.ItemsSource = _activePlaylist.Tracks.Where(d => !d.IsLocal);
 
             PlaylistSorting currentSort = PicofyConfiguration.CurrentConfiguration.GetSortingForPlaylist(playlist.Name);
 
@@ -155,21 +117,13 @@ namespace Picofy
             SongGrid.Items.Refresh();
         }
 
-        private void TheWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (TorshifySongPlayer.HasSavedCredentials())
-            {
-                DoTempLogon(null, null, true);
-            }
-        }
-
         private void ProgressB_MouseUp(object sender, MouseButtonEventArgs e)
         {
             int newPos = (int) ((e.GetPosition(ProgressB).X/ProgressB.ActualWidth)*Player.SongDuration);
             Player.SongProgress = newPos;
         }
 
-        private void TheWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void TheWindow_Closing(object sender, CancelEventArgs e)
         {
             foreach (BasicPlugin plugin in MusicPlayer.Current.Plugins)
             {
@@ -200,7 +154,7 @@ namespace Picofy
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void ButtonBase_OnClick(object sender, RoutedEventArgs e)

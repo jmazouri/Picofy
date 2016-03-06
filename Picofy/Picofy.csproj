@@ -130,6 +130,7 @@
     <Compile Include="SpotifySongProvider.cs" />
     <Compile Include="TorshifyHelper\Constants.cs" />
     <Compile Include="TorshifyHelper\SessionLinkFactory.cs" />
+    <Compile Include="TorshifyHelper\TorshifySessionManager.cs" />
     <Compile Include="TorshifyHelper\TorshifySongPlayer.cs" />
     <Compile Include="UIModels\PicofyConfiguration.cs" />
     <Compile Include="UIModels\PlaylistSorting.cs" />

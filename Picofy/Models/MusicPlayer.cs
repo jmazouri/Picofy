@@ -21,7 +21,20 @@ namespace Picofy.Models
             SongFinished?.Invoke();
         }
 
-        public bool RequiresLogin => SongPlayer?.Session?.ConnectionState != ConnectionState.LoggedIn;
+        private bool _requiresLogin = true;
+
+        public bool RequiresLogin
+        {
+            get
+            {
+                return _requiresLogin;
+            }
+            set
+            {
+                _requiresLogin = value;
+                OnPropertyChanged();
+            }
+        }
 
         private float _volume = 0.25f;
         public float Volume
@@ -41,9 +54,9 @@ namespace Picofy.Models
             }
         }
 
-        private ITrack _currentSong;
+        private IPlaylistTrack _currentSong;
 
-        public ITrack CurrentSong
+        public IPlaylistTrack CurrentSong
         {
             get { return _currentSong; }
             set
@@ -68,7 +81,19 @@ namespace Picofy.Models
             }
             set
             {
+                if (Equals(value, _currentPlaylist))
+                {
+                    return;
+                }
+
                 _currentPlaylist = value;
+
+                SongPlayer.Pause();
+                _songTimer.Stop();
+
+                CurrentSong = null;
+
+                OnPropertyChanged();
             }
         }
 
@@ -89,9 +114,11 @@ namespace Picofy.Models
                 _songTimer.Start();
             }
         }
-        public int SongDuration => (CurrentSong == null ? 0 : (int)CurrentSong.Duration.TotalSeconds);
 
+        public int SongDuration => (CurrentSong == null ? 0 : (int)CurrentSong.Duration.TotalSeconds);
+        
         public TorshifySongPlayer SongPlayer;
+        public TorshifySessionManager SessionManager;
 
         public List<BasicPlugin> Plugins { get; private set; }
 
@@ -116,6 +143,8 @@ namespace Picofy.Models
                 if (SongDuration > 0)
                 {
                     OnSongFinished();
+
+                    NextSong();
                 }
                 return;
             }
@@ -136,7 +165,7 @@ namespace Picofy.Models
             OnPropertyChanged(nameof(Volume));
         }
 
-        public void PlaySong(ITrack song)
+        public void PlaySong(IPlaylistTrack song)
         {
             _songTimer.Stop();
 
@@ -150,6 +179,48 @@ namespace Picofy.Models
             }
 
             _songTimer.Start();
+        }
+
+        public void NextSong()
+        {
+            if (_currentPlaylist == null) { return; }
+
+            var foundSongIndex = _currentPlaylist.Tracks.IndexOf(_currentSong);
+
+            if (_currentPlaylist.Tracks.Count == 0)
+            {
+                return;
+            }
+
+            if (foundSongIndex + 1 == _currentPlaylist.Tracks.Count - 1)
+            {
+                PlaySong(_currentPlaylist.Tracks.First());
+            }
+            else
+            {
+                PlaySong(_currentPlaylist.Tracks[foundSongIndex + 1]);
+            }
+        }
+
+        public void PrevSong()
+        {
+            if (_currentPlaylist == null) { return; }
+
+            var foundSongIndex = _currentPlaylist.Tracks.IndexOf(_currentSong);
+
+            if (_currentPlaylist.Tracks.Count == 0)
+            {
+                return;
+            }
+
+            if (foundSongIndex - 1 < 0)
+            {
+                PlaySong(_currentPlaylist.Tracks.Last());
+            }
+            else
+            {
+                PlaySong(_currentPlaylist.Tracks[foundSongIndex - 1]);
+            }
         }
 
         public void PauseToggle()
