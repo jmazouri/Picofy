@@ -78,10 +78,6 @@
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Ninject, Version=3.2.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\packages\Ninject.3.2.2.0\lib\net45-full\Ninject.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.Composition.registration" />
@@ -120,14 +116,10 @@
     <Compile Include="Converters\DateTimeRelative.cs" />
     <Compile Include="Converters\AlbumToCoverArt.cs" />
     <Compile Include="Converters\IntToTimestampConverter.cs" />
-    <Compile Include="Models\Album.cs" />
-    <Compile Include="Models\Artist.cs" />
-    <Compile Include="Models\Song.cs" />
     <Compile Include="Plugins\BasicPlugin.cs" />
     <Compile Include="Plugins\PluginContainer.cs" />
     <Compile Include="Plugins\PluginMusicDeliveryArgs.cs" />
     <Compile Include="Properties\Annotations.cs" />
-    <Compile Include="SpotifySongProvider.cs" />
     <Compile Include="TorshifyHelper\Constants.cs" />
     <Compile Include="TorshifyHelper\SessionLinkFactory.cs" />
     <Compile Include="TorshifyHelper\TorshifySessionManager.cs" />

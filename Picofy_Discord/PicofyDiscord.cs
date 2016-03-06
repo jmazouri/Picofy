@@ -30,6 +30,11 @@ namespace Picofy_Discord
 
         private bool _shouldSend = true;
 
+        public override void SongPaused()
+        {
+            _voiceClient.ClearVoicePCM();
+        }
+
         public override async void ShowDialog()
         {
             LoginDialog dialog = new LoginDialog();

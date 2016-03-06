@@ -14,20 +14,11 @@ namespace Picofy.Plugins
     {
         public virtual string Name => "Default Plugin";
 
-        public virtual void SongPaused()
-        {
-            
-        }
+        public abstract void SongPaused();
 
-        public virtual void ShowDialog()
-        {
-            
-        }
+        public abstract void ShowDialog();
 
-        public virtual void SongPlay(ITrack track)
-        {
-            
-        }
+        public abstract void SongPlay(ITrack track);
 
         public virtual bool MusicDeliver(PluginMusicDeliveryArgs args)
         {

@@ -29,13 +29,13 @@ namespace Picofy.TorshifyHelper
         {
             if (TorshifySongPlayer.HasSavedCredentials())
             {
-                DoTempLogon(null, null, rememberme);
+                PerformConnection(null, null, rememberme);
             }
             else
             {
                 if (username != null && password != null)
                 {
-                    DoTempLogon(username, password, rememberme);
+                    PerformConnection(username, password, rememberme);
                 }
                 else
                 {
@@ -46,7 +46,7 @@ namespace Picofy.TorshifyHelper
             OnLoginFinished();
         }
 
-        private void DoTempLogon(string username, string password, bool rememberme)
+        private void PerformConnection(string username, string password, bool rememberme)
         {
             MusicPlayer.Current.Connect(username, password, rememberme);
             MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();

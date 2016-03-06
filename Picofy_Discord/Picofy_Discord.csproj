@@ -75,6 +75,7 @@
     <ProjectReference Include="..\Picofy\Picofy.csproj">
       <Project>{b89ee40d-977c-4558-ad3a-29da65d575b2}</Project>
       <Name>Picofy</Name>
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\Torshify\Torshify.csproj">
       <Project>{FD9C7812-7F81-4E27-95B7-C36F2140EF57}</Project>
