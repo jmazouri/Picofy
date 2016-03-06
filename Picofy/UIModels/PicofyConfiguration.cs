@@ -17,23 +17,20 @@ namespace Picofy.UIModels
 
         private PicofyConfiguration() { }
 
-        private static PicofyConfiguration _currentConfiguration;
+        private static PicofyConfiguration _current;
 
-        public static PicofyConfiguration CurrentConfiguration
+        public static PicofyConfiguration Current
         {
             get
             {
-                if (_currentConfiguration == null)
-                {
-                    if (!File.Exists(ConfigurationPath))
-                    {
-                        new PicofyConfiguration().SaveChanges();
-                    }
+                if (_current != null) return _current;
 
-                    return _currentConfiguration = JsonConvert.DeserializeObject<PicofyConfiguration>(File.ReadAllText(ConfigurationPath));
+                if (!File.Exists(ConfigurationPath))
+                {
+                    new PicofyConfiguration().SaveChanges();
                 }
 
-                return _currentConfiguration;
+                return _current = JsonConvert.DeserializeObject<PicofyConfiguration>(File.ReadAllText(ConfigurationPath));
             }
         }
 

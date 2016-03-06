@@ -191,7 +191,8 @@ namespace Picofy.TorshifyHelper
             Session.LogoutComplete += delegate
             {
                 Session.Dispose();
-                _waveOut?.Dispose();
+                _waveOut.Stop();
+                _waveOut.Dispose();
             };
 
             Session.PlayerUnload();

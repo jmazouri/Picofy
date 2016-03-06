@@ -12,7 +12,7 @@ using Torshify;
 
 namespace Picofy.Models
 {
-    public class MusicPlayer : INotifyPropertyChanged
+    public class MusicPlayer : INotifyPropertyChanged, IDisposable
     {
         public delegate void SongFinishedHandler();
         public event SongFinishedHandler SongFinished;
@@ -54,9 +54,9 @@ namespace Picofy.Models
             }
         }
 
-        private IPlaylistTrack _currentSong;
+        private ITrack _currentSong;
 
-        public IPlaylistTrack CurrentSong
+        public ITrack CurrentSong
         {
             get { return _currentSong; }
             set
@@ -92,10 +92,30 @@ namespace Picofy.Models
                 _songTimer.Stop();
 
                 CurrentSong = null;
+                CurrentTracklist = value.Tracks.Cast<ITrack>().ToList();
 
                 OnPropertyChanged();
             }
         }
+
+        private List<ITrack> _currentTracklist = null; 
+        public List<ITrack> CurrentTracklist
+        {
+            get
+            {
+                if (_currentTracklist == null)
+                {
+                    return CurrentPlaylist.Tracks.Where(d => !d.IsLocal).Cast<ITrack>().ToList();
+                }
+
+                return _currentTracklist;
+            }
+            set
+            {
+                _currentTracklist = value;
+                OnPropertyChanged();
+            }
+        } 
 
         private readonly Timer _songTimer;
 
@@ -165,11 +185,13 @@ namespace Picofy.Models
             OnPropertyChanged(nameof(Volume));
         }
 
-        public void PlaySong(IPlaylistTrack song)
+        public void PlaySong(ITrack song, IEnumerable<ITrack> trackList = null)
         {
             _songTimer.Stop();
 
             CurrentSong = song;
+            _currentTracklist = trackList?.ToList();
+
             _songProgress = 0;
             SongPlayer.PlaySong(CurrentSong);
 
@@ -183,49 +205,45 @@ namespace Picofy.Models
 
         public void NextSong()
         {
-            if (_currentPlaylist == null) { return; }
+            var foundSongIndex = _currentTracklist.IndexOf(_currentSong);
 
-            var foundSongIndex = _currentPlaylist.Tracks.IndexOf(_currentSong);
-
-            if (_currentPlaylist.Tracks.Count == 0)
+            if (_currentTracklist.Count == 0)
             {
                 return;
             }
 
-            if (foundSongIndex + 1 == _currentPlaylist.Tracks.Count - 1)
+            if (foundSongIndex + 1 == _currentTracklist.Count - 1)
             {
-                PlaySong(_currentPlaylist.Tracks.First());
+                PlaySong(_currentTracklist.First(), _currentTracklist);
             }
             else
             {
-                PlaySong(_currentPlaylist.Tracks[foundSongIndex + 1]);
+                PlaySong(_currentTracklist[foundSongIndex + 1], _currentTracklist);
             }
         }
 
         public void PrevSong()
         {
-            if (_currentPlaylist == null) { return; }
+            var foundSongIndex = _currentTracklist.IndexOf(_currentSong);
 
-            var foundSongIndex = _currentPlaylist.Tracks.IndexOf(_currentSong);
-
-            if (_currentPlaylist.Tracks.Count == 0)
+            if (_currentTracklist.Count == 0)
             {
                 return;
             }
 
             if (foundSongIndex - 1 < 0)
             {
-                PlaySong(_currentPlaylist.Tracks.Last());
+                PlaySong(_currentTracklist.Last(), _currentTracklist);
             }
             else
             {
-                PlaySong(_currentPlaylist.Tracks[foundSongIndex - 1]);
+                PlaySong(_currentTracklist[foundSongIndex - 1], _currentTracklist);
             }
         }
 
-        public void PauseToggle()
+        public void PauseToggle(bool forcePause = false)
         {
-            if (SongPlayer.IsPlaying)
+            if (SongPlayer.IsPlaying || forcePause)
             {
                 _songTimer.Stop();
                 SongPlayer.Pause();
@@ -253,6 +271,11 @@ namespace Picofy.Models
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Dispose()
+        {
+            SongPlayer.Dispose();
         }
     }
 }

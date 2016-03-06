@@ -41,13 +41,20 @@ namespace Picofy
 
             InitializeComponent();
 
-            SongGrid.Sorting += (sender, args) => 
-            PicofyConfiguration.CurrentConfiguration.SetSortingForPlaylist(_activePlaylist.Name,
-                new PlaylistSorting
-                {
-                    ColumnName = args.Column.SortMemberPath,
-                    SortDirection = args.Column.SortDirection == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending
-                });
+            SongGrid.LayoutUpdated +=(sender, args) => Player.CurrentTracklist = SongGrid.Items.Cast<ITrack>().ToList();
+
+            SongGrid.Sorting += (sender, args) =>
+            {
+                PicofyConfiguration.Current.SetSortingForPlaylist(_activePlaylist.Name,
+                    new PlaylistSorting
+                    {
+                        ColumnName = args.Column.SortMemberPath,
+                        SortDirection =
+                            args.Column.SortDirection == ListSortDirection.Ascending
+                                ? ListSortDirection.Descending
+                                : ListSortDirection.Ascending
+                    });
+            };
         }
 
         private void SongGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -55,7 +62,7 @@ namespace Picofy
             if (SongGrid.SelectedItem != null)
             {
                 Player.CurrentPlaylist = _activePlaylist;
-                Player.PlaySong((IPlaylistTrack)SongGrid.SelectedItem);
+                Player.PlaySong((ITrack)SongGrid.SelectedItem, SongGrid.Items.Cast<ITrack>());
             }
         }
 
@@ -94,9 +101,9 @@ namespace Picofy
             playlist.WaitUntilLoaded();
             _activePlaylist = playlist;
 
-            SongGrid.ItemsSource = _activePlaylist.Tracks.Where(d => !d.IsLocal);
+            SongGrid.ItemsSource = _activePlaylist.Tracks;
 
-            PlaylistSorting currentSort = PicofyConfiguration.CurrentConfiguration.GetSortingForPlaylist(playlist.Name);
+            PlaylistSorting currentSort = PicofyConfiguration.Current.GetSortingForPlaylist(playlist.Name);
 
             SongGrid.Items.SortDescriptions.Clear();
 
@@ -125,11 +132,14 @@ namespace Picofy
 
         private void TheWindow_Closing(object sender, CancelEventArgs e)
         {
+            Player.PauseToggle(true);
+
             foreach (BasicPlugin plugin in MusicPlayer.Current.Plugins)
             {
                 plugin.Dispose();
             }
-            Player?.SongPlayer?.Dispose();
+
+            Player?.Dispose();
         }
 
         private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
