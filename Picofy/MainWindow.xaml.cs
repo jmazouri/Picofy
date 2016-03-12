@@ -41,7 +41,7 @@ namespace Picofy
 
             InitializeComponent();
 
-            SongGrid.LayoutUpdated +=(sender, args) => Player.CurrentTracklist = SongGrid.Items.Cast<ITrack>().ToList();
+            SongGrid.LayoutUpdated += (sender, args) => Player.CurrentTracklist = SongGrid.Items.Cast<ITrack>().ToList();
 
             SongGrid.Sorting += (sender, args) =>
             {
@@ -126,7 +126,7 @@ namespace Picofy
 
         private void ProgressB_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            int newPos = (int) ((e.GetPosition(ProgressB).X/ProgressB.ActualWidth)*Player.SongDuration);
+            int newPos = (int)((e.GetPosition(ProgressB).X / ProgressB.ActualWidth) * Player.SongDuration);
             Player.SongProgress = newPos;
         }
 

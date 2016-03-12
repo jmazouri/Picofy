@@ -12,13 +12,22 @@ using Torshify;
 
 namespace Picofy.Models
 {
-    public class MusicPlayer : INotifyPropertyChanged, IDisposable
+    public sealed class MusicPlayer : INotifyPropertyChanged, IDisposable
     {
         public delegate void SongFinishedHandler();
         public event SongFinishedHandler SongFinished;
-        protected virtual void OnSongFinished()
+
+        private void OnSongFinished()
         {
             SongFinished?.Invoke();
+        }
+
+        public bool AnyPlugins
+        {
+            get
+            {
+                return Plugins.Any();
+            }
         }
 
         private bool _requiresLogin = true;
@@ -152,6 +161,7 @@ namespace Picofy.Models
             _songTimer.Start();
 
             Plugins = PluginContainer.Current.Container.GetExports<BasicPlugin>().Select(d=>d.Value).Where(d=>d != null).ToList();
+            OnPropertyChanged(nameof(Plugins));
         }
 
         private void SongTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
@@ -268,7 +278,7 @@ namespace Picofy.Models
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

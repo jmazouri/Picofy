@@ -14,7 +14,15 @@ namespace Picofy.TorshifyHelper
         {
             get
             {
-                return MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.Playlists.Where(d => d.Type == PlaylistType.Playlist);
+                return LoadAndRetrievePlaylists().Where(d => d.Type == PlaylistType.Playlist);
+            }
+        }
+
+        public ISession Session
+        {
+            get
+            {
+                return MusicPlayer.Current.SongPlayer.Session;
             }
         }
 
@@ -24,6 +32,18 @@ namespace Picofy.TorshifyHelper
         {
             LoginFinished?.Invoke();
         }
+
+        public IEnumerable<IContainerPlaylist> LoadAndRetrievePlaylists()
+        {
+            MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
+
+            foreach (IContainerPlaylist playlist in MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.Playlists)
+            {
+                playlist.WaitUntilLoaded();
+            }
+
+            return MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.Playlists;
+        } 
 
         public void Login(string username = null, string password = null, bool rememberme = true)
         {
@@ -50,11 +70,6 @@ namespace Picofy.TorshifyHelper
         {
             MusicPlayer.Current.Connect(username, password, rememberme);
             MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.WaitUntilLoaded();
-
-            foreach (var lst in Playlists)
-            {
-                lst.WaitUntilLoaded(2500);
-            }
 
             MusicPlayer.Current.RequiresLogin = false;
         }

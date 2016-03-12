@@ -113,6 +113,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Converters\ArrayToCsv.cs" />
+    <Compile Include="Converters\BoolToVisibility.cs" />
     <Compile Include="Converters\DateTimeRelative.cs" />
     <Compile Include="Converters\AlbumToCoverArt.cs" />
     <Compile Include="Converters\IntToTimestampConverter.cs" />

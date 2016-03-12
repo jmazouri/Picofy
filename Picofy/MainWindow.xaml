@@ -115,7 +115,7 @@
                         <RowDefinition Height="1*"></RowDefinition>
                         <RowDefinition Height="35"></RowDefinition>
                     </Grid.RowDefinitions>
-                    
+
                     <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="4*"></RowDefinition>
@@ -126,7 +126,7 @@
                         <Image Grid.Row="0" Source="{Binding Path=CurrentSong, Converter={StaticResource AlbumToCoverArt}}" OpacityMask="Red" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2"/>
 
                         <GridSplitter Grid.Row="1" Background="Transparent" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"></GridSplitter>
-                        
+
                         <DockPanel VerticalAlignment="Stretch" Grid.Row="2">
                             <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="CharacterEllipsis" Padding="5,0" DockPanel.Dock="Top" FontSize="18" Text="{Binding CurrentSong.Name}" LineHeight="10"/>
                             <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="WordEllipsis" FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto Condensed Light"
