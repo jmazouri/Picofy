@@ -8,6 +8,7 @@ using System.Timers;
 using Picofy.Annotations;
 using Picofy.Plugins;
 using Picofy.TorshifyHelper;
+using Picofy.UIModels;
 using Torshify;
 
 namespace Picofy.Models
@@ -45,7 +46,7 @@ namespace Picofy.Models
             }
         }
 
-        private float _volume = 0.25f;
+        private float _volume;
         public float Volume
         {
             get { return _volume; }
@@ -56,8 +57,12 @@ namespace Picofy.Models
                 try
                 {
                     SongPlayer.Volume = _volume;
+                    PicofyConfiguration.Current.Volume = _volume;
                 }
-                catch { }
+                catch
+                {
+                    SongPlayer.Volume = 0;
+                }
 
                 OnPropertyChanged();
             }
@@ -158,7 +163,7 @@ namespace Picofy.Models
         {
             _songTimer = new Timer(1000);
             _songTimer.Elapsed += SongTimerOnElapsed;
-            _songTimer.Start();
+
 
             Plugins = PluginContainer.Current.Container.GetExports<BasicPlugin>().Select(d=>d.Value).Where(d=>d != null).ToList();
             OnPropertyChanged(nameof(Plugins));
@@ -192,7 +197,7 @@ namespace Picofy.Models
             }
 
             SongPlayer = new TorshifySongPlayer(username, password, rememberme);
-            OnPropertyChanged(nameof(Volume));
+            Volume = PicofyConfiguration.Current.Volume;
         }
 
         public void PlaySong(ITrack song, IEnumerable<ITrack> trackList = null)
@@ -253,6 +258,7 @@ namespace Picofy.Models
 
         public void PauseToggle(bool forcePause = false)
         {
+            if (SongPlayer == null) { return;}
             if (SongPlayer.IsPlaying || forcePause)
             {
                 _songTimer.Stop();
@@ -285,7 +291,7 @@ namespace Picofy.Models
 
         public void Dispose()
         {
-            SongPlayer.Dispose();
+            SongPlayer?.Dispose();
         }
     }
 }

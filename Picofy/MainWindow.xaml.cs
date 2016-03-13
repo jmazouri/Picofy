@@ -10,6 +10,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using MaterialDesignThemes.Wpf;
 using Newtonsoft.Json;
 using Picofy.Models;
 using Picofy.Plugins;
@@ -26,7 +29,7 @@ namespace Picofy
     {
         public MusicPlayer Player { get; set; }
         private TorshifySessionManager SessionManager;
-        private IPlaylist _activePlaylist;
+        private IContainerPlaylist _activePlaylist;
 
         public MainWindow()
         {
@@ -36,7 +39,6 @@ namespace Picofy
             SessionManager.LoginFinished += () =>
             {
                 PlaylistList.ItemsSource = SessionManager.Playlists;
-                LoadPlaylistSongs(SessionManager.Playlists.First());
             };
 
             InitializeComponent();
@@ -59,6 +61,7 @@ namespace Picofy
 
         private void SongGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            
             if (SongGrid.SelectedItem != null)
             {
                 Player.CurrentPlaylist = _activePlaylist;
@@ -88,12 +91,12 @@ namespace Picofy
                 return;
             }
 
-            SessionManager.Login(UsernameBox.Text, PasswordBox.Password, Remember.IsChecked == true);
+            LoginDialog.IsOpen = SessionManager.Login(UsernameBox.Text, PasswordBox.Password, Remember.IsChecked == true);
         }
 
         private void TheWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            SessionManager.Login();
+            LoginDialog.IsOpen = !SessionManager.Login();
         }
 
         void LoadPlaylistSongs(IContainerPlaylist playlist)
@@ -101,7 +104,7 @@ namespace Picofy
             playlist.WaitUntilLoaded();
             _activePlaylist = playlist;
 
-            SongGrid.ItemsSource = _activePlaylist.Tracks;
+            SongGrid.ItemsSource = _activePlaylist.Tracks.Where(d=>d.IsLocal == false);
 
             PlaylistSorting currentSort = PicofyConfiguration.Current.GetSortingForPlaylist(playlist.Name);
 
@@ -159,6 +162,8 @@ namespace Picofy
 
             var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 50, 0, 0, 0, 0, 0, 0, SearchType.Suggest);
             result.WaitForCompletion();
+
+            _activePlaylist = null;
             SongGrid.ItemsSource = result.Tracks;
         }
 
@@ -179,6 +184,138 @@ namespace Picofy
             var foundPlugin = MusicPlayer.Current.Plugins.FirstOrDefault(d => d.Name == (string)source.Content);
 
             foundPlugin?.ShowDialog();
+        }
+
+        private void PlaylistList_OnPreviewDrop(object sender, DragEventArgs e)
+        {
+            var result = VisualTreeHelper.HitTest(PlaylistList, e.GetPosition(PlaylistList));
+
+            var foundRow = FindAnchestor<ListViewItem>(result.VisualHit);
+            var foundPlaylist = foundRow.Content as IContainerPlaylist;
+            var currentTrack = (e.Data.GetData("spotifyTrack") as ITrack);
+
+            foundRow.RenderTransform = new TranslateTransform();
+
+            DoubleAnimation da = new DoubleAnimation
+            {
+                To = 0,
+                From = 15,
+                Duration = new Duration(TimeSpan.FromSeconds(0.2)),
+                EasingFunction = new QuadraticEase()
+            };
+
+            (foundRow.RenderTransform).BeginAnimation(TranslateTransform.XProperty, da);
+
+            foundPlaylist.Tracks.Add(currentTrack);
+        }
+
+        private void PlaylistList_OnDragEnter(object sender, DragEventArgs e)
+        {
+            var result = VisualTreeHelper.HitTest(PlaylistList, e.GetPosition(PlaylistList));
+            var foundRow = FindAnchestor<ListViewItem>(result.VisualHit);
+
+            if (foundRow == null)
+            {
+                e.Handled = false;
+                return;
+            }
+
+            DoubleAnimation da = new DoubleAnimation
+            {
+                From = 0,
+                To = 15,
+                Duration = new Duration(TimeSpan.FromSeconds(0.2)),
+                EasingFunction = new QuadraticEase()
+            };
+
+            DoubleAnimation da_back = new DoubleAnimation
+            {
+                To = 0,
+                Duration = new Duration(TimeSpan.FromSeconds(0.2)),
+                EasingFunction = new QuadraticEase()
+            };
+
+            foreach (var item in PlaylistList.Items)
+            {
+                ListViewItem listItem = PlaylistList.ItemContainerGenerator.ContainerFromItem(item) as ListViewItem;
+
+                if (listItem == null) { continue; }
+
+                listItem.RenderTransform = new TranslateTransform();
+
+                (listItem.RenderTransform).BeginAnimation(TranslateTransform.XProperty, listItem == foundRow ? da : da_back);
+            }
+
+        }
+
+        private void PlaylistList_OnDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent("spotifyTrack"))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private static T FindAnchestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            do
+            {
+                if (current is T)
+                {
+                    return (T)current;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            while (current != null);
+            return null;
+        }
+
+        private Point startPoint;
+
+        private void SongGrid_OnMouseMove(object sender, MouseEventArgs e)
+        {
+            // Get the current mouse position
+            Point mousePos = e.GetPosition(null);
+            Vector diff = startPoint - mousePos;
+
+            if (e.LeftButton == MouseButtonState.Pressed &&
+                (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance || Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance))
+            {
+                // Get the dragged ListViewItem
+                DataGrid dataGrid = sender as DataGrid;
+                DataGridRow dataGridRow = FindAnchestor<DataGridRow>((DependencyObject)e.OriginalSource);
+
+                if (dataGridRow == null)
+                {
+                    e.Handled = false;
+                    return;
+                }
+
+                // Find the data behind the ListViewItem
+                ITrack contact = (ITrack) dataGridRow.Item;
+
+                // Initialize the drag & drop operation
+                DataObject dragData = new DataObject("spotifyTrack", contact);
+                DragDrop.DoDragDrop(dataGridRow, dragData, DragDropEffects.Move);
+            }
+        }
+
+        private void SongGrid_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            startPoint = e.GetPosition(null);
+        }
+
+
+        private void DeleteSong_Click(object sender, RoutedEventArgs e)
+        {
+            if (_activePlaylist == null)
+            {
+                MessageBox.Show("Can't delete track from here.");
+                return;
+            }
+
+            _activePlaylist.Tracks.Remove(PlaylistList.SelectedItem as IPlaylistTrack);
+            LoadPlaylistSongs(_activePlaylist);
         }
     }
 }

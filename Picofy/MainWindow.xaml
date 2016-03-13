@@ -3,9 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Picofy"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:system="clr-namespace:System;assembly=mscorlib"
         xmlns:converters="clr-namespace:Picofy.Converters"
         xmlns:torshify="clr-namespace:Torshify;assembly=Torshify"
         mc:Ignorable="d" Name="TheWindow"
@@ -13,12 +11,12 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="pack://application:,,,/MaterialDesignThemes.Wpf;component/Resources/Roboto/#Roboto"
         MinWidth="100" DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="Picofy" Height="750" Width="1000" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
+        Title="Picofy" Height="650" Width="1200" Loaded="TheWindow_Loaded" Closing="TheWindow_Closing">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Close" Executed="CloseCommandHandler"/>
     </Window.CommandBindings>
 
-    <materialDesign:DialogHost IsOpen="{Binding Path=Player.RequiresLogin, Mode=OneWay}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <materialDesign:DialogHost Name="LoginDialog" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <materialDesign:DialogHost.Resources>
             <converters:IntToTimestampConverter x:Key="TimestampConverter" />
             <converters:AlbumToCoverArt x:Key="AlbumToCoverArt" />
@@ -99,8 +97,9 @@
                     <TextBox Name="SearchBox" FontSize="16" Background="{StaticResource img}" Foreground="White" Grid.Row="0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyUp="TextBox_KeyUp" />
                 </Grid>
 
-                <ListView Grid.Row="1" Grid.Column="0" Name="PlaylistList" FontSize="16" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
-                              Foreground="White" SelectionChanged="Selector_OnSelectionChanged">
+                <ListView Grid.Row="1" Grid.Column="0" Name="PlaylistList" FontSize="14" Background="{x:Null}" BorderBrush="{x:Null}" HorizontalAlignment="Stretch"
+                              Foreground="White" SelectionChanged="Selector_OnSelectionChanged" AllowDrop="True" Drop="PlaylistList_OnDrop" PreviewDrop="PlaylistList_OnPreviewDrop"
+                              DragEnter="PlaylistList_OnDragEnter">
                     <ListView.ItemTemplate>
                         <DataTemplate DataType="{x:Type torshify:IContainerPlaylist}">
                             <TextBlock Text="{Binding Name}"></TextBlock>
@@ -156,7 +155,16 @@
                 <DataGrid Name="SongGrid" CellStyle="{StaticResource songCellStyle}" GridLinesVisibility="Horizontal"
                           CanUserAddRows="False" CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserDeleteRows="False"
                           CanUserSortColumns="True" CanUserResizeRows="False" AutoGenerateColumns="False" IsReadOnly="True"
-                          Grid.Row="0" Grid.RowSpan="4" Grid.Column="2" SelectionMode="Single">
+                          Grid.Row="0" Grid.RowSpan="4" Grid.Column="2" SelectionMode="Single" MouseMove="SongGrid_OnMouseMove" PreviewMouseLeftButtonDown="SongGrid_OnPreviewMouseLeftButtonDown">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Remove" Click="DeleteSong_Click">
+                                <MenuItem.Icon>
+                                    <Image Source="Icons/delete.png" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                     <DataGrid.Resources>
                         <Style BasedOn="{StaticResource MaterialDesignDataGridRow}" TargetType="DataGridRow">
                             <EventSetter Event="MouseDoubleClick" Handler="SongGrid_MouseDoubleClick"/>

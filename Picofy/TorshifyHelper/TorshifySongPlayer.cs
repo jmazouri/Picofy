@@ -42,13 +42,19 @@ namespace Picofy.TorshifyHelper
                 _volume = value;
                 if (_waveOut != null)
                 {
-                    _waveOut.Volume = _volume;
+                    try
+                    {
+                        _waveOut.Volume = _volume;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        //Don't worry about it
+                    }
                 }
             }
         }
 
         private bool _continuePlay = true;
-        private bool _oldContinueState = false;
 
         public static bool HasSavedCredentials()
         {

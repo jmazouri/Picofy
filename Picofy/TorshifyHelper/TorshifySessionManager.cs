@@ -40,30 +40,39 @@ namespace Picofy.TorshifyHelper
             foreach (IContainerPlaylist playlist in MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.Playlists)
             {
                 playlist.WaitUntilLoaded();
+                playlist.TracksAdded += (sender, args) =>
+                {
+                    playlist.WaitUntilLoaded();
+                };
             }
 
             return MusicPlayer.Current.SongPlayer.Session.PlaylistContainer.Playlists;
         } 
 
-        public void Login(string username = null, string password = null, bool rememberme = true)
+        public bool Login(string username = null, string password = null, bool rememberme = true)
         {
             if (TorshifySongPlayer.HasSavedCredentials())
             {
                 PerformConnection(null, null, rememberme);
-            }
-            else
-            {
-                if (username != null && password != null)
-                {
-                    PerformConnection(username, password, rememberme);
-                }
-                else
-                {
-                    return;
-                }
+                OnLoginFinished();
+                return true;
             }
 
-            OnLoginFinished();
+            if (username != null && password != null)
+            {
+                try
+                {
+                    PerformConnection(username, password, rememberme);
+                    OnLoginFinished();
+                    return true;
+                }
+                catch (TorshifyException)
+                {
+                    return false;
+                }              
+            }
+
+            return false;
         }
 
         private void PerformConnection(string username, string password, bool rememberme)

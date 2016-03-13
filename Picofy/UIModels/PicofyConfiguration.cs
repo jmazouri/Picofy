@@ -15,6 +15,25 @@ namespace Picofy.UIModels
         [JsonProperty]
         private Dictionary<string, PlaylistSorting> _playlistSorts = new Dictionary<string, PlaylistSorting>();
 
+        [JsonProperty]
+        private float _volume;
+
+        public float Volume
+        {
+            get
+            {
+                return _volume;
+            }
+            set
+            {
+                if (value > 0 && value <= 1)
+                {
+                    _volume = value;
+                    SaveChanges();
+                }
+            }
+        }
+
         private PicofyConfiguration() { }
 
         private static PicofyConfiguration _current;
