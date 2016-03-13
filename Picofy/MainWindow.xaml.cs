@@ -64,7 +64,10 @@ namespace Picofy
             
             if (SongGrid.SelectedItem != null)
             {
-                Player.CurrentPlaylist = _activePlaylist;
+                if (_activePlaylist != null)
+                {
+                    Player.CurrentPlaylist = _activePlaylist;
+                }
                 Player.PlaySong((ITrack)SongGrid.SelectedItem, SongGrid.Items.Cast<ITrack>());
             }
         }
@@ -160,7 +163,7 @@ namespace Picofy
                 return;
             }
 
-            var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 50, 0, 0, 0, 0, 0, 0, SearchType.Suggest);
+            var result = Player.SongPlayer.Session.Search(SearchBox.Text, 0, 50, 0, 0, 0, 0, 0, 0, SearchType.Standard);
             result.WaitForCompletion();
 
             _activePlaylist = null;
@@ -304,7 +307,6 @@ namespace Picofy
         {
             startPoint = e.GetPosition(null);
         }
-
 
         private void DeleteSong_Click(object sender, RoutedEventArgs e)
         {

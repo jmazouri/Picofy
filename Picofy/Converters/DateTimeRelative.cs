@@ -19,7 +19,7 @@ namespace Picofy.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return null;
+            return (value == null ? DateTime.MinValue : value.ToString().DehumanizeTo<DateTime>());
         }
     }
 }

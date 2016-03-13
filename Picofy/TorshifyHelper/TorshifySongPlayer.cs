@@ -30,7 +30,6 @@ namespace Picofy.TorshifyHelper
 
         private readonly object _lockObject = new object();
         
-
         private ManualResetEvent wait = new ManualResetEvent(false);
 
         private float _volume = 0.25f;

@@ -176,7 +176,7 @@
                         <DataGridTextColumn Header="Artist" Binding="{Binding Path=Artists, Converter={StaticResource ArrayToCsv}}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Album" Binding="{Binding Album.Name}"></DataGridTextColumn>
                         <DataGridTextColumn Header="Duration" Binding="{Binding Duration}"></DataGridTextColumn>
-                        <DataGridTextColumn Header="Added" Binding="{Binding Path=CreateTime, Converter={StaticResource DateTimeRelative}}"></DataGridTextColumn>
+                        <DataGridTextColumn Header="Added" SortMemberPath="CreateTime" Binding="{Binding Path=CreateTime, Converter={StaticResource DateTimeRelative}}"></DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
