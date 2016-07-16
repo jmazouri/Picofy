@@ -8,26 +8,25 @@ namespace Picofy_Discord
 {
     public class AudioBuffer
     {
-        private Queue<byte[]> AudioQueue = new Queue<byte[]>();
-         
-        public void Add(byte[] buffer, int length)
+        private List<byte> AudioQueue;
+
+        public AudioBuffer()
         {
-            AudioQueue.Enqueue(buffer.Take(length).ToArray());
+            AudioQueue = new List<byte>();
         }
 
-        public byte[] ReadUntil(long bytes)
+        public void Add(IEnumerable<byte> buffer)
         {
-            List<byte> bufferData = new List<byte>();
-
-            while (bufferData.Count < bytes)
-            {
-                var taken = AudioQueue.Dequeue();
-                bufferData.AddRange(taken);
-            }
-
-            return bufferData.ToArray();
+            AudioQueue.AddRange(buffer);
         }
 
-        public long QueueLength => AudioQueue.Sum(d => d.LongLength);
+        public byte[] ReadAll()
+        {
+            byte[] ret = AudioQueue.ToArray();
+            AudioQueue.Clear();
+            return ret;
+        }
+
+        public long QueueLength => AudioQueue.Count;
     }
 }

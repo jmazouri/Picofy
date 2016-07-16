@@ -164,7 +164,6 @@ namespace Picofy.Models
             _songTimer = new Timer(1000);
             _songTimer.Elapsed += SongTimerOnElapsed;
 
-
             Plugins = PluginContainer.Current.Container.GetExports<BasicPlugin>().Select(d=>d.Value).Where(d=>d != null).ToList();
             OnPropertyChanged(nameof(Plugins));
         }

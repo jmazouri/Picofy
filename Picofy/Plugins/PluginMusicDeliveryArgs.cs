@@ -16,6 +16,8 @@ namespace Picofy.Plugins
         public int Rate{ get; }
         public WriteableBufferingSource Source { get; }
 
+        public MusicDeliveryEventArgs SourceArgs { get; }
+
         public PluginMusicDeliveryArgs(MusicDeliveryEventArgs args, WriteableBufferingSource source)
         {
             Samples = args.Samples;
@@ -24,6 +26,7 @@ namespace Picofy.Plugins
             Rate = args.Rate;
 
             Source = source;
+            SourceArgs = args;
         }
     }
 }

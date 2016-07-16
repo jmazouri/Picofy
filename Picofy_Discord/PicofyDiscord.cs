@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using CSCore;
+using CSCore.Codecs.WAV;
 using CSCore.DSP;
 using CSCore.SoundOut;
 using CSCore.Streams;
@@ -20,19 +21,16 @@ namespace Picofy_Discord
     {
         public override string Name => "Discord Plugin";
 
-        private Server CurrentServer => _client?.AllServers.First(d => d.Name.Contains("Friently"));
+        private Server CurrentServer => _client?.FindServers("Friently Gamers").FirstOrDefault();
 
         private DiscordClient _client;
-        private IDiscordVoiceClient _voiceClient;
+        private IAudioClient _voiceClient;
         private VolumeSource _volumeProvider;
         private IWaveSource _providerConverted;
-        private AudioBuffer _buffer = new AudioBuffer();
-
-        private bool _shouldSend = true;
 
         public override void SongPaused()
         {
-            _voiceClient.ClearVoicePCM();
+            _voiceClient?.Clear();
         }
 
         public override async void ShowDialog()
@@ -41,20 +39,19 @@ namespace Picofy_Discord
 
             if (dialog.ShowDialog() == true)
             {
-                _client = new DiscordClient(new DiscordClientConfig
+                _client = new DiscordClient();
+                _client.UsingAudio(x =>
                 {
-                    EnableVoiceEncryption = true,
-                    VoiceMode = DiscordVoiceMode.Outgoing
+                    x.Mode = AudioMode.Outgoing;
+                    x.Bitrate = null;
+                    x.Channels = 2;
                 });
 
                 await _client.Connect(dialog.Username, dialog.Password);
-                await _client.JoinVoiceServer(CurrentServer.VoiceChannels.First(d => d.Members.Any(v => v.Name == "jmazouri")));
-                _voiceClient = _client.GetVoiceClient(CurrentServer);
+                var voiceChannel = CurrentServer.VoiceChannels.FirstOrDefault(d => d.Name == "Bot Test");
 
-                _client.VoiceDisconnected += (sender, args) =>
-                {
-                    _shouldSend = false;
-                };
+                _voiceClient = await _client.GetService<AudioService>()
+                    .Join(voiceChannel);
             }
         }
 
@@ -67,21 +64,20 @@ namespace Picofy_Discord
 
             if (_providerConverted == null)
             {
-                _volumeProvider = new VolumeSource(args.Source.ToMono().ChangeSampleRate(48000).ToSampleSource());
-                _providerConverted = _volumeProvider.ToWaveSource(16);
+                _volumeProvider = new VolumeSource(args.Source.ChangeSampleRate(48000).ToSampleSource());
+                _providerConverted = new BufferSource(_volumeProvider.ToWaveSource(16), _volumeProvider.WaveFormat.BytesPerSecond * 4);
             }
 
             _volumeProvider.Volume = MusicPlayer.Current.Volume;
 
-            byte[] buffer = new byte[128000];
+            byte[] buffer = new byte[_volumeProvider.WaveFormat.BytesPerSecond];
             int byteCount = _providerConverted.Read(buffer, 0, buffer.Length);
-            _buffer.Add(buffer, byteCount);
 
-            if (_shouldSend && _buffer.QueueLength > 64000)
+            if (byteCount > 0)
             {
-                byte[] data = _buffer.ReadUntil(64000);
-                _voiceClient?.SendVoicePCM(data, data.Length);
+                _voiceClient?.Send(buffer, 0, byteCount);
             }
+           
 
             return true;
         }
@@ -90,8 +86,8 @@ namespace Picofy_Discord
         {
             if (_client != null)
             {
-                var foundChannel = CurrentServer?.Channels.First(d => d.Name == "bot_tests");
-                _client?.SendMessage(foundChannel, "Now Playing: " + track.Name + " by " + track.Artists[0].Name);
+                var foundChannel = CurrentServer?.TextChannels.First(d => d.Name == "bot_tests");
+                foundChannel.SendMessage("Now Playing: " + track.Name + " by " + track.Artists[0].Name);
 
                 _providerConverted = null;
             }
